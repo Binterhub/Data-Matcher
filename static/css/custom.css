@@ -67,7 +67,10 @@
     height: 800px;
     opacity: 0.1;
     z-index: -1;
+    transform-origin: center;
+    transform-box: fill-box;
     animation: rotate 60s linear infinite;
+    will-change: transform;
 }
 
 .content-wrapper {
