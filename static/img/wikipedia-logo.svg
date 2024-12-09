@@ -1,24 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <!-- Background circle -->
-  <circle cx="64" cy="64" r="60" fill="#ffffff"/>
-  
-  <!-- Wikipedia puzzle globe outline -->
-  <path d="M64,8a56,56,0,1,1-56,56A56,56,0,0,1,64,8M64,0a64,64,0,1,0,64,64A64,64,0,0,0,64,0Z" fill="#666666"/>
-  
-  <!-- The "W" character -->
-  <path d="M35.5,35 l5,25 l10,-35 l5,0 l10,35 l5,-25 l5,0 l-10,45 l-5,0 l-10,-35 l-10,35 l-5,0 l-10,-45 Z" 
-        fill="#000000" 
-        transform="translate(21,8) scale(0.8)"/>
-  
-  <!-- Puzzle pieces suggestions -->
-  <g fill="none" stroke="#666666" stroke-width="1" opacity="0.5">
-    <path d="M64,24 C74,24 84,28 92,36"/>
-    <path d="M92,36 C100,44 104,54 104,64"/>
-    <path d="M104,64 C104,74 100,84 92,92"/>
-    <path d="M92,92 C84,100 74,104 64,104"/>
-    <path d="M64,104 C54,104 44,100 36,92"/>
-    <path d="M36,92 C28,84 24,74 24,64"/>
-    <path d="M24,64 C24,54 28,44 36,36"/>
-    <path d="M36,36 C44,28 54,24 64,24"/>
+  <g transform-origin="64 64">
+    <!-- Background circle -->
+    <circle cx="64" cy="64" r="60" fill="#ffffff"/>
+    
+    <!-- Wikipedia puzzle globe outline -->
+    <path d="M64,8a56,56,0,1,1-56,56A56,56,0,0,1,64,8M64,0a64,64,0,1,0,64,64A64,64,0,0,0,64,0Z" fill="#666666"/>
+    
+    <!-- The "W" character -->
+    <path d="M35.5,35 l5,25 l10,-35 l5,0 l10,35 l5,-25 l5,0 l-10,45 l-5,0 l-10,-35 l-10,35 l-5,0 l-10,-45 Z" 
+          fill="#000000" 
+          transform="translate(21,8) scale(0.8)"/>
+    
+    <!-- Puzzle pieces suggestions -->
+    <g fill="none" stroke="#666666" stroke-width="1" opacity="0.5">
+      <path d="M64,24 C74,24 84,28 92,36"/>
+      <path d="M92,36 C100,44 104,54 104,64"/>
+      <path d="M104,64 C104,74 100,84 92,92"/>
+      <path d="M92,92 C84,100 74,104 64,104"/>
+      <path d="M64,104 C54,104 44,100 36,92"/>
+      <path d="M36,92 C28,84 24,74 24,64"/>
+      <path d="M24,64 C24,54 28,44 36,36"/>
+      <path d="M36,36 C44,28 54,24 64,24"/>
+    </g>
   </g>
 </svg>
