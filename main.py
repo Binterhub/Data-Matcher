@@ -1,11 +1,17 @@
 from flask import Flask, render_template, request, g, session, redirect, url_for
+from flask_session import Session
+import os
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-goes-here'  # Required for session
+
+# Configure session
+app.config['SECRET_KEY'] = os.urandom(24)
+app.config['SESSION_TYPE'] = 'filesystem'
+Session(app)
 
 # Translations
 TRANSLATIONS = {
