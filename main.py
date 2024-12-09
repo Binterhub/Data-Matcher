@@ -53,16 +53,27 @@ TRANSLATIONS = {
 
 @app.before_request
 def before_request():
-    g.lang = session.get('lang', 'de')
+    # Initialize session if not already set
+    if 'lang' not in session:
+        session['lang'] = 'de'
+        logging.debug(f"Initializing session with default language: {session['lang']}")
+    
+    g.lang = session['lang']
     g.translations = TRANSLATIONS[g.lang]
+    logging.debug(f"Current language: {g.lang}")
 
 @app.route('/')
 def index():
+    logging.debug(f"Rendering index with language: {g.lang}")
     return render_template('index.html')
 
 @app.route('/switch-language')
 def switch_language():
-    session['lang'] = 'en' if session.get('lang', 'de') == 'de' else 'de'
+    current_lang = session.get('lang', 'de')
+    new_lang = 'en' if current_lang == 'de' else 'de'
+    session['lang'] = new_lang
+    session.modified = True
+    logging.debug(f"Switching language from {current_lang} to {new_lang}")
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
