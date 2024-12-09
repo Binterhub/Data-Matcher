@@ -9,8 +9,14 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 
 # Configure session
-app.config['SECRET_KEY'] = os.urandom(24)
-app.config['SESSION_TYPE'] = 'filesystem'
+app.config.update(
+    SECRET_KEY=os.urandom(24),
+    SESSION_TYPE='filesystem',
+    SESSION_FILE_DIR=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session'),
+    SESSION_PERMANENT=False,
+    PERMANENT_SESSION_LIFETIME=1800  # 30 minutes
+)
+
 Session(app)
 
 # Translations
