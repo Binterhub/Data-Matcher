@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ g.lang }}" data-bs-theme="dark">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,16 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg sticky-top bg-dark border-bottom border-body">
-        <div class="container-fluid">
-            <div class="ms-auto">
-                <a href="{{ url_for('switch_language') }}" class="btn btn-outline-light">
-                    <i class="fas fa-globe me-2"></i>
-                    {% if g.lang == 'en' %}Deutsch{% else %}English{% endif %}
-                </a>
-            </div>
-        </div>
-    </nav>
+    
     {% block content %}{% endblock %}
 
     <!-- Bootstrap JS -->
