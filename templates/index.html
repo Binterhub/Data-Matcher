@@ -6,35 +6,32 @@
         <img src="{{ url_for('static', filename='img/wikipedia-logo.svg') }}" 
              alt="Wikipedia Logo" 
              class="wiki-logo mb-4">
-        <h1 class="display-4 fw-bold">Entdecke die Welt des Wissens</h1>
-        <p class="lead">Deutsche Wikipedia - Die freie Enzyklopädie</p>
+        <h1 class="display-4 fw-bold">{{ g.translations.title }}</h1>
+        <p class="lead">{{ g.translations.subtitle }}</p>
     </header>
 
     <section class="row g-4 justify-content-center">
         <div class="col-md-10">
             <div class="card bg-dark">
                 <div class="card-body">
-                    <h2 class="card-title mb-4">Warum Wikipedia?</h2>
-                    <p class="card-text">
-                        In einer Welt, in der Wissen grenzenlos ist, steht Wikipedia als Leuchtturm der freien Bildung. 
-                        Für Wissenschaftsbegeisterte bieten wir:
-                    </p>
+                    <h2 class="card-title mb-4">{{ g.translations.why_title }}</h2>
+                    <p class="card-text">{{ g.translations.why_text }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
                             <i class="fas fa-microscope me-2"></i>
-                            Über 2,7 Millionen Artikel in deutscher Sprache
+                            {{ g.translations.stats }}
                         </li>
                         <li class="list-group-item">
                             <i class="fas fa-users me-2"></i>
-                            Eine aktive Community von Wissenschaftlern und Experten
+                            {{ g.translations.community }}
                         </li>
                         <li class="list-group-item">
                             <i class="fas fa-book-open me-2"></i>
-                            Qualitätsgesicherte wissenschaftliche Artikel
+                            {{ g.translations.quality }}
                         </li>
                         <li class="list-group-item">
                             <i class="fas fa-globe me-2"></i>
-                            Zugang zu internationalem Wissen
+                            {{ g.translations.access }}
                         </li>
                     </ul>
                 </div>
@@ -44,15 +41,11 @@
         <div class="col-md-10 mt-4">
             <div class="card bg-dark">
                 <div class="card-body">
-                    <h2 class="card-title mb-4">Wissenschaft für alle</h2>
-                    <p class="card-text">
-                        Von Quantenphysik bis zur Evolutionsbiologie, von der Astronomie bis zur Molekularbiologie 
-                        – Wikipedia macht komplexes Wissen zugänglich. Jeder Artikel wird von engagierten Menschen 
-                        geschrieben und geprüft, die ihre Expertise teilen möchten.
-                    </p>
+                    <h2 class="card-title mb-4">{{ g.translations.science_title }}</h2>
+                    <p class="card-text">{{ g.translations.science_text }}</p>
                     <div class="text-center mt-4">
-                        <a href="https://de.wikipedia.org" class="btn btn-primary btn-lg">
-                            Jetzt entdecken
+                        <a href="https://{% if g.lang == 'de' %}de{% else %}en{% endif %}.wikipedia.org" class="btn btn-primary btn-lg">
+                            {{ g.translations.discover }}
                             <i class="fas fa-arrow-right ms-2"></i>
                         </a>
                     </div>
@@ -64,7 +57,7 @@
     <footer class="text-center mt-5">
         <p class="text-muted">
             <small>
-                Wikipedia® ist eine eingetragene Marke der Wikimedia Foundation Inc.
+                {{ g.translations.footer }}
             </small>
         </p>
     </footer>
