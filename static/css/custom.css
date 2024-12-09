@@ -1,4 +1,14 @@
 /* Custom styles building on Bootstrap theme */
+:root[data-bs-theme="dark"] {
+    --bs-body-color: #e9ecef;
+    --bs-body-bg: #212529;
+}
+
+.card {
+    --bs-card-bg: var(--bs-gray-900);
+    --bs-card-color: var(--bs-gray-100);
+    border: 1px solid var(--bs-gray-700);
+}
 .wiki-logo {
     width: 200px;
     height: auto;
