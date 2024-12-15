@@ -14,8 +14,8 @@
     height: 200px;
     object-fit: contain;
     transition: transform 0.3s ease;
-    border-radius: 25px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 50px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .wiki-logo:hover {
