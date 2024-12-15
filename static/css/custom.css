@@ -12,10 +12,13 @@
 .wiki-logo {
     width: 200px;
     height: 200px;
-    object-fit: contain;
+    object-fit: cover;
     transition: transform 0.3s ease;
     border-radius: 100%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: block;
+    margin: 0 auto;
 }
 
 .wiki-logo:hover {
@@ -70,9 +73,10 @@
     opacity: 0.15;
     z-index: -1;
     animation: rotate 60s linear infinite;
-    object-fit: contain;
+    object-fit: cover;
     border-radius: 50%;
     transform-origin: center;
+    overflow: hidden;
 }
 
 .content-wrapper {
