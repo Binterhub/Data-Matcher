@@ -14,11 +14,12 @@
     height: 200px;
     object-fit: cover;
     transition: transform 0.3s ease;
-    border-radius: 100%;
+    border-radius: 50%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     display: block;
     margin: 0 auto;
+    aspect-ratio: 1/1;
 }
 
 .wiki-logo:hover {
@@ -77,6 +78,7 @@
     border-radius: 50%;
     transform-origin: center;
     overflow: hidden;
+    aspect-ratio: 1/1;
 }
 
 .content-wrapper {
