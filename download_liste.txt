@@ -1,0 +1,61 @@
+DATEIEN FÜR DOWNLOAD - Wissenschafts-Wissensplattform
+========================================================
+
+ERFORDERLICHE DATEIEN (diese müssen Sie herunterladen):
+
+1. HAUPT-ANWENDUNG:
+   ✓ main.py
+
+2. ABHÄNGIGKEITEN:
+   ✓ app_requirements.txt
+
+3. TEMPLATES (Ordner erstellen: templates/):
+   ✓ templates/base.html
+   ✓ templates/index.html
+
+4. STATISCHE DATEIEN (Ordner erstellen: static/):
+   ✓ static/css/custom.css
+   ✓ static/img/IMG_5482.jpeg
+
+5. DOKUMENTATION:
+   ✓ README.md
+   ✓ DOWNLOAD_ANLEITUNG.md
+
+6. START-SKRIPTE:
+   ✓ start.sh (für Linux/Mac)
+   ✓ start.bat (für Windows)
+   ✓ deploy.py (für Produktion)
+
+NICHT BENÖTIGT (Replit-spezifisch):
+   ✗ .replit
+   ✗ replit.nix
+   ✗ pyproject.toml
+   ✗ uv.lock
+   ✗ flask_session/ (wird automatisch erstellt)
+
+ORDNERSTRUKTUR AUF IHREM SERVER:
+=====================================
+meine-app/
+├── main.py
+├── app_requirements.txt
+├── README.md
+├── DOWNLOAD_ANLEITUNG.md
+├── start.sh
+├── start.bat
+├── deploy.py
+├── templates/
+│   ├── base.html
+│   └── index.html
+└── static/
+    ├── css/
+    │   └── custom.css
+    └── img/
+        └── IMG_5482.jpeg
+
+INSTALLATION AUF IHREM SERVER:
+===============================
+1. Alle Dateien in einen Ordner kopieren
+2. Terminal öffnen und in den Ordner wechseln
+3. Ausführen: chmod +x start.sh (Linux/Mac)
+4. Ausführen: ./start.sh oder start.bat
+5. App läuft auf http://localhost:5000
