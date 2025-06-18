@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<img src="{{ url_for('static', filename='img/IMG_5482.jpeg') }}" class="background-globe" alt="Background Globe">
+<div class="container py-5 content-wrapper">
+    <header class="text-center mb-5">
+        <img src="{{ url_for('static', filename='img/IMG_5482.jpeg') }}" 
+             alt="Logo" 
+             class="wiki-logo mb-4">
+        <h1 class="display-4 fw-bold">{{ g.translations.title }}</h1>
+        <p class="lead">{{ g.translations.subtitle }}</p>
+    </header>
+
+    <section class="row g-4 justify-content-center">
+        <div class="col-md-10">
+            <div class="card bg-dark">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">{{ g.translations.why_title }}</h2>
+                    <p class="card-text">{{ g.translations.why_text }}</p>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-microscope me-2"></i>
+                            {{ g.translations.stats }}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-users me-2"></i>
+                            {{ g.translations.community }}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-book-open me-2"></i>
+                            {{ g.translations.quality }}
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-globe me-2"></i>
+                            {{ g.translations.access }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-10 mt-4">
+            <div class="card bg-dark">
+                <div class="card-body">
+                    <h2 class="card-title mb-4">{{ g.translations.science_title }}</h2>
+                    <p class="card-text">{{ g.translations.science_text }}</p>
+                    <div class="text-center mt-4">
+                        <a href="https://en.wikipedia.org" class="btn btn-primary btn-lg">
+                            {{ g.translations.discover }}
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="text-center mt-5">
+        <p class="text-muted">
+            <small>
+                {{ g.translations.footer }}
+            </small>
+        </p>
+    </footer>
+</div>
+{% endblock %}
