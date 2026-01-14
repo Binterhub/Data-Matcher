@@ -17,7 +17,7 @@ TRANSLATIONS = {
     'quality': 'Qualitätsgesicherte wissenschaftliche Artikel',
     'access': 'Zugang zu internationalem Wissen',
     'science_title': 'Wissenschaft für alle',
-    'science_text': 'Von Quantenphysik bis Evolutionsbiologie, von Astronomie bis Molekularbiologie – Wikipedia macht komplexes Wissen zugänglich. Jeder Artikel wird von engagierten Menschen geschrieben und geprüft, die ihr Fachwissen teilen möchten.',
+    'science_text': 'Von Quantenphysik bis Evolutionsbiologie, von Astronomie bis Molekularbiologie – Wikipedia macht komplexes Wissen zugänglich. Jeder Artikel wird von begeisterten und engagierten Menschen geschrieben und geprüft, die ihr Fachwissen teilen möchten.',
     'discover': 'Jetzt entdecken',
     'footer': 'Wikipedia® ist eine eingetragene Marke der Wikimedia Foundation Inc.'
 }

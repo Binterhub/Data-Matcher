@@ -20,7 +20,7 @@ class WissensApp {
             qualityText: 'Qualitätsgesicherte wissenschaftliche Artikel',
             accessText: 'Zugang zu internationalem Wissen',
             scienceTitle: 'Wissenschaft für alle',
-            scienceText: 'Von Quantenphysik bis Evolutionsbiologie, von Astronomie bis Molekularbiologie – Wikipedia macht komplexes Wissen zugänglich. Jeder Artikel wird von engagierten Menschen geschrieben und geprüft, die ihr Fachwissen teilen möchten.',
+            scienceText: 'Von Quantenphysik bis Evolutionsbiologie, von Astronomie bis Molekularbiologie – Wikipedia macht komplexes Wissen zugänglich. Jeder Artikel wird von begeisterten und engagierten Menschen geschrieben und geprüft, die ihr Fachwissen teilen möchten.',
             discoverText: 'Jetzt entdecken',
             footerText: 'Wikipedia® ist eine eingetragene Marke der Wikimedia Foundation Inc.',
             searchBtn: 'Artikel suchen',
