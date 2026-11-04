@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Liste hochladen{% endblock %}
+{% block content %}
+<section class="panel narrow">
+    <h1>Externe Liste</h1>
+    {% if version %}
+        <p>Abgleich gegen die Referenzliste vom {{ version.uploaded_at|vienna }} Uhr ({{ version.row_count }} Ärzte).</p>
+    {% else %}
+        <p class="flash flash-error">Zuerst eine Referenzliste hochladen.</p>
+    {% endif %}
+    <p>Spalten: Titel, Vorname, Nachname, PLZ, Ort, plus Kunden-IDs. ÖK-Nummer, One-Key-Nummer und Hauptfach werden verwendet, wenn sie vorhanden sind.</p>
+    <form method="post" enctype="multipart/form-data" class="stack">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Excel oder CSV
+            <input type="file" name="file" accept=".csv,.txt,.xlsx,.xlsm" required {% if not version %}disabled{% endif %}>
+        </label>
+        <button type="submit" class="button" {% if not version %}disabled{% endif %}>Hochladen und abgleichen</button>
+    </form>
+</section>
+{% endblock %}

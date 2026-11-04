@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Übersicht{% endblock %}
+{% block content %}
+<h1>Übersicht</h1>
+<section class="panel">
+    <h2>Referenzliste</h2>
+    {% if version %}
+        <p>Aktuelle Version vom <strong>{{ version.uploaded_at|vienna }}</strong> Uhr (Wien),
+            {{ version.row_count }} Ärzte, Datei {{ version.filename }}.</p>
+        <pre class="log">{{ version.log_text }}</pre>
+    {% else %}
+        <p>Noch keine Referenzliste hochgeladen.</p>
+    {% endif %}
+    <p><a class="button" href="{{ url_for('referenz') }}">Referenzliste verwalten</a></p>
+</section>
+<section class="panel">
+    <div class="section-head">
+        <h2>Externe Listen</h2>
+        <a class="button" href="{{ url_for('upload_external') }}">Liste hochladen</a>
+    </div>
+    {% if uploads %}
+    <table>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Datei</th>
+                <th>Zeilen</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in uploads %}
+            <tr>
+                <td>{{ item.row.uploaded_at|vienna }}</td>
+                <td>{{ item.row.filename }}</td>
+                <td>{{ item.row.row_count }}</td>
+                <td>
+                    {% for key, label in status_labels.items() %}
+                        {% if item.counts.get(key) %}
+                            <span class="badge status-{{ key }}">{{ label }} {{ item.counts[key] }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td><a href="{{ url_for('review', upload_id=item.row.id) }}">Prüfen</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>Noch keine externe Liste.</p>
+    {% endif %}
+</section>
+{% endblock %}

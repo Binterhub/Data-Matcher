@@ -1,0 +1,7 @@
+Kunden-ID,Titel,Vorname,Nachname,PLZ,Ort,Hauptfach,ÖK-Nummer,One-Key-Nummer
+K1,Dr.,Anna,Huber,1010,Wien,Innere Medizin,123456,
+K2,Dr.,Hans Peter,Mueller Schmidt,8010,Graz,Allgemeinmedizin,,
+K3,Univ.-Prof.,Maria,Berger,4020,Linz,,,W1003
+K4,Dr.,T,Gruber,5020,Salzburg,Orthopädie,,
+K5,Dr.,Sabine,Hofer,1010,Wien,Kardiologie,,
+K6,Dr.,Erika,Zimmermann,2700,Wiener Neustadt,HNO,,

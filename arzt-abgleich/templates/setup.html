@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Zugang anlegen{% endblock %}
+{% block content %}
+<section class="panel narrow">
+    <h1>Zugang anlegen</h1>
+    <p>Ein Benutzer für diese Installation. Das Passwort wird mit Argon2 gespeichert.</p>
+    <form method="post" class="stack">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Benutzername
+            <input name="username" autocomplete="username" required minlength="3" maxlength="64">
+        </label>
+        <label>Passwort
+            <input name="password" type="password" autocomplete="new-password" required minlength="10">
+        </label>
+        <button type="submit" class="button">Zugang speichern</button>
+    </form>
+</section>
+{% endblock %}

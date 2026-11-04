@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Referenzliste{% endblock %}
+{% block content %}
+<h1>Referenzliste</h1>
+<section class="panel">
+    <h2>{% if version %}Version ersetzen{% else %}Erste Version hochladen{% endif %}</h2>
+    <p>Eine Zeile pro Person, eine Evo-ID. Spalten: Evo-ID, Titel, Vorname, Nachname, Ort, Postleitzahl, Hauptfach, ÖK-Nummer, One-Key-Nummer.</p>
+    <form method="post" enctype="multipart/form-data" class="stack">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Excel oder CSV
+            <input type="file" name="file" accept=".csv,.txt,.xlsx,.xlsm" required>
+        </label>
+        {% if version %}
+        <label class="check">
+            <input type="checkbox" name="confirm" value="yes" required>
+            Aktuelle Liste ersetzen. Das Protokoll der alten Version bleibt erhalten.
+        </label>
+        {% endif %}
+        <button type="submit" class="button">Hochladen</button>
+    </form>
+</section>
+<section class="panel">
+    <h2>Upload-Protokoll</h2>
+    {% if versions %}
+        {% for item in versions %}
+        <article class="log-entry">
+            <h3>
+                {{ item.uploaded_at|vienna }} Uhr
+                {% if item.is_current %}<span class="badge status-auto">aktuell</span>{% endif %}
+            </h3>
+            <p>{{ item.filename }} · {{ item.row_count }} Ärzte · {{ item.skipped }} übersprungen</p>
+            <pre class="log">{{ item.log_text }}</pre>
+        </article>
+        {% endfor %}
+    {% else %}
+        <p>Noch kein Upload.</p>
+    {% endif %}
+</section>
+{% endblock %}
