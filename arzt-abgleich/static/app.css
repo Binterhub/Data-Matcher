@@ -85,6 +85,27 @@ a.button:visited {
 .button-quiet:hover { background: #e7f3f3; }
 .button:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.progress-panel { margin-top: 1rem; }
+.progress-track {
+    height: 1rem;
+    background: #e8eef2;
+    border-radius: 999px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--teal);
+}
+.progress-bar.indeterminate {
+    width: 35%;
+    animation: progress-slide 1.1s ease-in-out infinite;
+}
+@keyframes progress-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(320%); }
+}
+
 .section-head, .actions, .jump {
     display: flex;
     flex-wrap: wrap;

@@ -7,6 +7,7 @@ import json
 import os
 import secrets
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
@@ -47,6 +48,8 @@ VIENNA = ZoneInfo("Europe/Vienna")
 PASSWORD_HASHER = PasswordHasher()
 LOCAL_USERNAME = "admin"
 LOCAL_PASSWORD = "admin"
+_MATCH_JOBS: dict[str, dict] = {}
+_MATCH_LOCK = threading.Lock()
 ALLOWED_SUFFIXES = {".csv", ".txt", ".xlsx", ".xlsm"}
 STATUS_ORDER = ("auto", "likely", "uncertain", "unmatched", "manual")
 GROUP_COPY = {
@@ -216,11 +219,26 @@ def create_app(instance_path: str | None = None) -> Flask:
                 frame = read_table(filename, payload)
                 parsed_rows, id_columns, log_text = parse_external(frame)
             except ValueError as error:
+                if request.form.get("progress") == "1":
+                    return jsonify(error=str(error)), 400
                 flash(str(error), "error")
                 return redirect(url_for("upload_external"))
             if not parsed_rows:
-                flash("Die Datei enthält keine Zeilen.", "error")
+                message = "Die Datei enthält keine Zeilen."
+                if request.form.get("progress") == "1":
+                    return jsonify(error=message), 400
+                flash(message, "error")
                 return redirect(url_for("upload_external"))
+            if request.form.get("progress") == "1":
+                job_id = _launch_match_job(
+                    app.config["DB_PATH"],
+                    filename,
+                    log_text,
+                    id_columns,
+                    None if version is None else version["id"],
+                    parsed_rows,
+                )
+                return jsonify(status=url_for("match_progress_status", job_id=job_id))
             if version is None:
                 stored = _pending_rows(parsed_rows)
                 log_text += "\nNoch keine Referenzliste. Zeilen sind ohne Treffer gespeichert."
@@ -244,6 +262,23 @@ def create_app(instance_path: str | None = None) -> Flask:
             )
             return redirect(url_for("review", upload_id=upload_id))
         return render_template("upload.html", version=version)
+
+    @app.get("/upload/progress/<job_id>")
+    @login_required
+    def match_progress_status(job_id: str):
+        with _MATCH_LOCK:
+            job = _MATCH_JOBS.get(job_id)
+            if job is None:
+                abort(404)
+            payload = {
+                "done": job["done"],
+                "total": job["total"],
+                "error": job["error"],
+                "review": job["review"],
+            }
+        response = jsonify(payload)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
     @app.get("/uploads/<int:upload_id>")
     @login_required
@@ -558,10 +593,11 @@ def _pending_rows(parsed_rows: list[dict]) -> list[dict]:
     return stored
 
 
-def _match_parsed_rows(version_id: int, parsed_rows: list[dict]) -> list[dict]:
-    matcher = _matcher(version_id)
+def _match_rows(matcher: Matcher, parsed_rows: list[dict], on_progress=None) -> list[dict]:
+    total = len(parsed_rows)
+    step = max(1, total // 100)
     stored = []
-    for parsed in parsed_rows:
+    for index, parsed in enumerate(parsed_rows, start=1):
         result = matcher.match(
             ExternalPerson(
                 titel=parsed["titel"],
@@ -575,7 +611,82 @@ def _match_parsed_rows(version_id: int, parsed_rows: list[dict]) -> list[dict]:
             )
         )
         stored.append({**parsed, **_fields_from_match(result, 0)})
+        if on_progress is not None and (index == total or index % step == 0):
+            on_progress(index, total)
     return stored
+
+
+def _match_parsed_rows(version_id: int, parsed_rows: list[dict]) -> list[dict]:
+    return _match_rows(_matcher(version_id), parsed_rows)
+
+
+def _launch_match_job(
+    db_path: str,
+    filename: str,
+    log_text: str,
+    id_columns: list[str],
+    version_id: int | None,
+    parsed_rows: list[dict],
+) -> str:
+    job_id = secrets.token_urlsafe(12)
+    with _MATCH_LOCK:
+        _MATCH_JOBS[job_id] = {
+            "done": 0,
+            "total": len(parsed_rows),
+            "error": None,
+            "review": None,
+        }
+    threading.Thread(
+        target=_run_match_job,
+        args=(db_path, job_id, filename, log_text, id_columns, version_id, parsed_rows),
+        daemon=True,
+    ).start()
+    return job_id
+
+
+def _run_match_job(
+    db_path: str,
+    job_id: str,
+    filename: str,
+    log_text: str,
+    id_columns: list[str],
+    version_id: int | None,
+    parsed_rows: list[dict],
+) -> None:
+    def report(done: int, _total: int) -> None:
+        with _MATCH_LOCK:
+            job = _MATCH_JOBS.get(job_id)
+            if job is not None:
+                job["done"] = done
+
+    try:
+        if version_id is None:
+            stored = _pending_rows(parsed_rows)
+            report(len(parsed_rows), len(parsed_rows))
+            log_text += "\nNoch keine Referenzliste. Zeilen sind ohne Treffer gespeichert."
+        else:
+            connection = db.connect(Path(db_path))
+            try:
+                matcher = Matcher([_doctor_from_row(row) for row in db.load_doctors(connection, version_id)])
+            finally:
+                connection.close()
+            stored = _match_rows(matcher, parsed_rows, on_progress=report)
+            log_text += "\n" + _summary(stored)
+        connection = db.connect(Path(db_path))
+        try:
+            upload_id = db.save_upload(connection, filename, log_text, id_columns, version_id, stored)
+        finally:
+            connection.close()
+        with _MATCH_LOCK:
+            job = _MATCH_JOBS.get(job_id)
+            if job is not None:
+                job["done"] = len(parsed_rows)
+                job["review"] = f"/uploads/{upload_id}"
+    except Exception:
+        with _MATCH_LOCK:
+            job = _MATCH_JOBS.get(job_id)
+            if job is not None and not job["error"]:
+                job["error"] = "Abgleich fehlgeschlagen."
 
 
 def _summary(rows: list[dict]) -> str:

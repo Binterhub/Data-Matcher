@@ -15,7 +15,83 @@
         <label>Excel oder CSV
             <input type="file" name="file" accept=".csv,.txt,.xlsx,.xlsm" required>
         </label>
-        <button type="submit" class="button">Hochladen und abgleichen</button>
+        <button type="submit" class="button" id="upload-submit">Hochladen und abgleichen</button>
     </form>
+    <div id="match-progress" class="progress-panel" hidden>
+        <p id="match-progress-label">Datei wird gelesen…</p>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="match-progress-bar" class="progress-bar indeterminate"></div>
+        </div>
+    </div>
 </section>
+<script>
+const form = document.querySelector("form.stack");
+const panel = document.getElementById("match-progress");
+const label = document.getElementById("match-progress-label");
+const bar = document.getElementById("match-progress-bar");
+const meter = panel.querySelector("[role=progressbar]");
+const submit = document.getElementById("upload-submit");
+
+function showProgress(text, percent) {
+    panel.hidden = false;
+    label.textContent = text;
+    if (percent === null) {
+        bar.classList.add("indeterminate");
+        bar.style.width = "";
+        meter.setAttribute("aria-valuenow", "0");
+        return;
+    }
+    bar.classList.remove("indeterminate");
+    bar.style.width = percent + "%";
+    meter.setAttribute("aria-valuenow", String(percent));
+}
+
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    submit.disabled = true;
+    showProgress("Datei wird gelesen…", null);
+    const body = new FormData(form);
+    body.append("progress", "1");
+    let started;
+    try {
+        started = await fetch(form.action, {method: "POST", body});
+    } catch (error) {
+        submit.disabled = false;
+        showProgress("Die Verbindung ist abgebrochen.", 0);
+        return;
+    }
+    const payload = await started.json();
+    if (!started.ok || payload.error) {
+        submit.disabled = false;
+        showProgress(payload.error || "Hochladen fehlgeschlagen.", 0);
+        return;
+    }
+    const timer = setInterval(async () => {
+        let status;
+        try {
+            status = await fetch(payload.status, {cache: "no-store"});
+        } catch (error) {
+            return;
+        }
+        if (!status.ok) {
+            return;
+        }
+        const data = await status.json();
+        if (data.error) {
+            clearInterval(timer);
+            submit.disabled = false;
+            showProgress(data.error, 0);
+            return;
+        }
+        const total = data.total || 0;
+        const done = data.done || 0;
+        const percent = total ? Math.floor(done * 100 / total) : 0;
+        showProgress(done + " von " + total + " Zeilen (" + percent + " %)", percent);
+        if (data.review) {
+            clearInterval(timer);
+            window.location = data.review;
+        }
+    }, 400);
+});
+</script>
 {% endblock %}
