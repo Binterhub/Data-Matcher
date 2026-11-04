@@ -67,7 +67,9 @@ input[type="text"], input[type="password"], input[type="search"], input:not([typ
 }
 input[type="file"] { font-weight: 400; }
 
-.button {
+.button,
+a.button,
+a.button:visited {
     display: inline-block;
     border: 0;
     background: var(--teal);

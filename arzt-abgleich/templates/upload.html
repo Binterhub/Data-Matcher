@@ -6,15 +6,16 @@
     {% if version %}
         <p>Abgleich gegen die Referenzliste vom {{ version.uploaded_at|vienna }} Uhr ({{ version.row_count }} Ärzte).</p>
     {% else %}
-        <p class="flash flash-error">Zuerst eine Referenzliste hochladen.</p>
+        <p class="flash flash-error">Noch keine Referenzliste. Die externe Liste kann trotzdem hochgeladen werden. Der Abgleich startet, sobald eine Referenzliste vorhanden ist.</p>
+        <p><a class="button" href="{{ url_for('referenz') }}">Referenzliste hochladen</a></p>
     {% endif %}
     <p>Spalten: Titel, Vorname, Nachname, PLZ, Ort, plus Kunden-IDs. ÖK-Nummer, One-Key-Nummer und Hauptfach werden verwendet, wenn sie vorhanden sind.</p>
     <form method="post" enctype="multipart/form-data" class="stack">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label>Excel oder CSV
-            <input type="file" name="file" accept=".csv,.txt,.xlsx,.xlsm" required {% if not version %}disabled{% endif %}>
+            <input type="file" name="file" accept=".csv,.txt,.xlsx,.xlsm" required>
         </label>
-        <button type="submit" class="button" {% if not version %}disabled{% endif %}>Hochladen und abgleichen</button>
+        <button type="submit" class="button">Hochladen und abgleichen</button>
     </form>
 </section>
 {% endblock %}

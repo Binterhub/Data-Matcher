@@ -36,6 +36,7 @@ from matching import (
     Doctor,
     ExternalPerson,
     Matcher,
+    MatchResult,
     manual_result,
     search_doctors,
 )
@@ -209,9 +210,6 @@ def create_app(instance_path: str | None = None) -> Flask:
     def upload_external():
         version = db.current_version(g.db)
         if request.method == "POST":
-            if version is None:
-                flash("Zuerst eine Referenzliste hochladen.", "error")
-                return redirect(url_for("referenz"))
             upload = request.files.get("file")
             try:
                 filename, payload = _read_upload(upload)
@@ -223,17 +221,27 @@ def create_app(instance_path: str | None = None) -> Flask:
             if not parsed_rows:
                 flash("Die Datei enthält keine Zeilen.", "error")
                 return redirect(url_for("upload_external"))
-            stored = _match_parsed_rows(version["id"], parsed_rows)
-            summary = _summary(stored)
+            if version is None:
+                stored = _pending_rows(parsed_rows)
+                log_text += "\nNoch keine Referenzliste. Zeilen sind ohne Treffer gespeichert."
+                flash(
+                    "Liste gespeichert. Für den Abgleich eine Referenzliste hochladen, dann offene Zeilen neu abgleichen.",
+                    "ok",
+                )
+                version_id = None
+            else:
+                stored = _match_parsed_rows(version["id"], parsed_rows)
+                log_text += "\n" + _summary(stored)
+                flash("Liste abgeglichen.", "ok")
+                version_id = version["id"]
             upload_id = db.save_upload(
                 g.db,
                 filename,
-                log_text + "\n" + summary,
+                log_text,
                 id_columns,
-                version["id"],
+                version_id,
                 stored,
             )
-            flash("Liste abgeglichen.", "ok")
             return redirect(url_for("review", upload_id=upload_id))
         return render_template("upload.html", version=version)
 
@@ -539,6 +547,15 @@ def _fields_from_row(row) -> dict:
 def _matcher(version_id: int) -> Matcher:
     doctors = [_doctor_from_row(row) for row in db.load_doctors(g.db, version_id)]
     return Matcher(doctors)
+
+
+def _pending_rows(parsed_rows: list[dict]) -> list[dict]:
+    note = "Noch keine Referenzliste. Abgleich folgt nach dem Upload."
+    stored = []
+    for parsed in parsed_rows:
+        result = MatchResult(evo_id=None, score=0, status="unmatched", method="none", note=note)
+        stored.append({**parsed, **_fields_from_match(result, 0)})
+    return stored
 
 
 def _match_parsed_rows(version_id: int, parsed_rows: list[dict]) -> list[dict]:
