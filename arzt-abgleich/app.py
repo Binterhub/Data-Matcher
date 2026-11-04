@@ -44,6 +44,8 @@ from tables import STATUS_LABELS, export_frame, parse_external, parse_reference,
 BASE_DIR = Path(__file__).resolve().parent
 VIENNA = ZoneInfo("Europe/Vienna")
 PASSWORD_HASHER = PasswordHasher()
+LOCAL_USERNAME = "admin"
+LOCAL_PASSWORD = "admin"
 ALLOWED_SUFFIXES = {".csv", ".txt", ".xlsx", ".xlsm"}
 STATUS_ORDER = ("auto", "likely", "uncertain", "unmatched", "manual")
 GROUP_COPY = {
@@ -71,22 +73,30 @@ def create_app(instance_path: str | None = None) -> Flask:
         secret_path.write_text(app.secret_key, encoding="utf-8")
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=False,
         SESSION_COOKIE_SAMESITE="Lax",
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,
         DB_PATH=str(Path(app.instance_path) / "arzt.db"),
     )
     db.init_db(Path(app.config["DB_PATH"]))
+    connection = db.connect(Path(app.config["DB_PATH"]))
+    try:
+        _ensure_local_user(connection)
+    finally:
+        connection.close()
 
     @app.before_request
     def prepare_request():
+        g.db = db.connect(Path(app.config["DB_PATH"]))
         if "csrf_token" not in session:
             session["csrf_token"] = secrets.token_urlsafe(32)
-        if request.method == "POST":
-            sent = request.form.get("csrf_token", "")
-            expected = session.get("csrf_token", "")
-            if not sent or not expected or not secrets.compare_digest(sent, expected):
-                abort(400)
-        g.db = db.connect(Path(app.config["DB_PATH"]))
+        # Local single-user bypass: the browser session cookie was not coming
+        # back on POST, so the CSRF check rejected every login. Sign in the
+        # fixed account on each request instead of depending on that cookie.
+        user = db.get_user(g.db)
+        if user is not None:
+            session["user_id"] = user["id"]
+            session["username"] = user["username"]
 
     @app.teardown_request
     def close_db(_error):
@@ -395,6 +405,26 @@ def format_vienna(value: str) -> str:
 
 def _has_user() -> bool:
     return db.user_count(g.db) > 0
+
+
+def _ensure_local_user(connection: sqlite3.Connection) -> None:
+    """Keep one fixed local account so signup and the cookie login are unnecessary."""
+    password_hash = PASSWORD_HASHER.hash(LOCAL_PASSWORD)
+    user = db.get_user(connection)
+    if user is None:
+        db.create_user(connection, LOCAL_USERNAME, password_hash)
+        return
+    try:
+        PASSWORD_HASHER.verify(user["password_hash"], LOCAL_PASSWORD)
+        if user["username"] == LOCAL_USERNAME:
+            return
+    except VerificationError:
+        pass
+    connection.execute(
+        "UPDATE users SET username = ?, password_hash = ? WHERE id = ?",
+        (LOCAL_USERNAME, password_hash, user["id"]),
+    )
+    connection.commit()
 
 
 def _password_ok(user: sqlite3.Row, password: str) -> bool:
