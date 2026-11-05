@@ -128,8 +128,10 @@ th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid va
     margin: 0.1rem 0.25rem 0.1rem 0;
 }
 .status-auto { background: #d9f2df; }
+.status-very_likely { background: #b7e7cf; }
 .status-likely { background: #d9e8fb; }
 .status-uncertain { background: #fff1cc; }
+.status-likely_wrong { background: #f8d4c4; }
 .status-unmatched { background: #eceff1; }
 .status-manual { background: #eadff8; }
 

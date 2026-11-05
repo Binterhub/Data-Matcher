@@ -8,9 +8,11 @@ from dataclasses import dataclass
 
 from rapidfuzz import fuzz, process
 
+VERY_LIKELY_MIN = 92
 LIKELY_MIN = 85
 UNCERTAIN_MIN = 60
-SUGGESTION_MIN = 40
+LIKELY_WRONG_MIN = 40
+SUGGESTION_MIN = LIKELY_WRONG_MIN
 
 _UMLAUTS = str.maketrans(
     {
@@ -232,10 +234,14 @@ def combined_score(person, doctor: Doctor) -> int:
 
 
 def classify_score(score: int) -> str:
+    if score >= VERY_LIKELY_MIN:
+        return "very_likely"
     if score >= LIKELY_MIN:
         return "likely"
     if score >= UNCERTAIN_MIN:
         return "uncertain"
+    if score >= LIKELY_WRONG_MIN:
+        return "likely_wrong"
     return "unmatched"
 
 
@@ -328,10 +334,10 @@ class Matcher:
         status = classify_score(score)
         note = ""
         identifier_missing = (person.oek_n and not oek_hit) or (person.onekey_n and not key_hit)
-        if identifier_missing and status == "likely":
+        if identifier_missing and status in {"very_likely", "likely"}:
             status = "uncertain"
             note = "Kennung steht nicht in der Referenzliste."
-        elif status == "unmatched":
+        elif status == "likely_wrong":
             note = "Bester Kandidat liegt unter der Unsicher-Schwelle."
         return _from_doctor(best, score, status, "fuzzy", note)
 

@@ -33,7 +33,9 @@ from werkzeug.utils import secure_filename
 import db
 from matching import (
     LIKELY_MIN,
+    LIKELY_WRONG_MIN,
     UNCERTAIN_MIN,
+    VERY_LIKELY_MIN,
     Doctor,
     ExternalPerson,
     Matcher,
@@ -51,12 +53,14 @@ LOCAL_PASSWORD = "admin"
 _MATCH_JOBS: dict[str, dict] = {}
 _MATCH_LOCK = threading.Lock()
 ALLOWED_SUFFIXES = {".csv", ".txt", ".xlsx", ".xlsm"}
-STATUS_ORDER = ("auto", "likely", "uncertain", "unmatched", "manual")
+STATUS_ORDER = ("auto", "very_likely", "likely", "uncertain", "likely_wrong", "unmatched", "manual")
 PAGE_SIZE = 50
 GROUP_COPY = {
     "auto": "Exakte ÖK- oder One-Key-Nummer, 100 %.",
-    "likely": f"Name, Fach und Adresse ab {LIKELY_MIN} %.",
+    "very_likely": f"Name, Fach und Adresse ab {VERY_LIKELY_MIN} %.",
+    "likely": f"Name, Fach und Adresse ab {LIKELY_MIN} % und unter {VERY_LIKELY_MIN} %.",
     "uncertain": f"Ab {UNCERTAIN_MIN} % und unter {LIKELY_MIN} %, oder die Kennung passt nicht.",
+    "likely_wrong": f"Ab {LIKELY_WRONG_MIN} % und unter {UNCERTAIN_MIN} %. Der Vorschlag passt wahrscheinlich nicht.",
     "unmatched": "Kein ausreichender Kandidat.",
     "manual": "Von Hand zugeordnet oder bestätigt.",
 }
@@ -293,8 +297,10 @@ def create_app(instance_path: str | None = None) -> Flask:
             "review.html",
             upload=upload,
             groups=groups,
+            very_likely_min=VERY_LIKELY_MIN,
             likely_min=LIKELY_MIN,
             uncertain_min=UNCERTAIN_MIN,
+            likely_wrong_min=LIKELY_WRONG_MIN,
             page_query=request.query_string.decode(),
         )
 
@@ -704,8 +710,9 @@ def _summary(rows: list[dict]) -> str:
         counts[row["match_status"]] = counts.get(row["match_status"], 0) + 1
     return (
         "Zuordnung: "
-        f"{counts['auto']} automatisch, {counts['likely']} wahrscheinlich, "
-        f"{counts['uncertain']} unsicher, {counts['unmatched']} ohne Treffer."
+        f"{counts['auto']} automatisch, {counts['very_likely']} sehr wahrscheinlich, "
+        f"{counts['likely']} wahrscheinlich, {counts['uncertain']} unsicher, "
+        f"{counts['likely_wrong']} wahrscheinlich falsch, {counts['unmatched']} ohne Treffer."
     )
 
 

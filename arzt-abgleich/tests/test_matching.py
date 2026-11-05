@@ -10,7 +10,14 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from app import create_app
-from matching import Doctor, ExternalPerson, Matcher, normalize_id, normalize_text
+from matching import (
+    Doctor,
+    ExternalPerson,
+    Matcher,
+    classify_score,
+    normalize_id,
+    normalize_text,
+)
 from tables import parse_external, parse_reference, read_table
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,9 +52,9 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(columns, ["Kunden-ID"])
         expected = {
             "K1": ("auto", "E1001", "oek"),
-            "K2": ("likely", "E1002", "fuzzy"),
+            "K2": ("very_likely", "E1002", "fuzzy"),
             "K3": ("auto", "E1003", "onekey"),
-            "K4": ("likely", "E1004", "fuzzy"),
+            "K4": ("very_likely", "E1004", "fuzzy"),
             "K5": ("uncertain", "E1005", "fuzzy"),
             "K6": ("unmatched", None, "none"),
         }
@@ -58,10 +65,56 @@ class MatchTests(unittest.TestCase):
             self.assertEqual(result.status, status, row["customer_ids"])
             self.assertEqual(result.evo_id, evo_id, row["customer_ids"])
             self.assertEqual(result.method, method, row["customer_ids"])
+            if status == "very_likely":
+                self.assertGreaterEqual(result.score, 92)
             if status == "likely":
                 self.assertGreaterEqual(result.score, 85)
+                self.assertLess(result.score, 92)
             if status == "auto":
                 self.assertEqual(result.score, 100)
+
+    def test_score_bands(self):
+        self.assertEqual(classify_score(100), "very_likely")
+        self.assertEqual(classify_score(92), "very_likely")
+        self.assertEqual(classify_score(91), "likely")
+        self.assertEqual(classify_score(85), "likely")
+        self.assertEqual(classify_score(84), "uncertain")
+        self.assertEqual(classify_score(60), "uncertain")
+        self.assertEqual(classify_score(59), "likely_wrong")
+        self.assertEqual(classify_score(40), "likely_wrong")
+        self.assertEqual(classify_score(39), "unmatched")
+
+    def test_middle_and_low_bands_keep_the_candidate(self):
+        likely = self.matcher.match(
+            ExternalPerson(vorname="Anna", nachname="Huber", plz="1010", ort="Wien", hauptfach="Chirurgie")
+        )
+        self.assertEqual(likely.status, "likely")
+        self.assertEqual(likely.evo_id, "E1001")
+        self.assertEqual(likely.score, 89)
+
+        wrong = self.matcher.match(
+            ExternalPerson(vorname="Erika", nachname="Wagner", plz="2700", ort="Wiener Neustadt", hauptfach="HNO")
+        )
+        self.assertEqual(wrong.status, "likely_wrong")
+        self.assertEqual(wrong.method, "fuzzy")
+        self.assertEqual(wrong.evo_id, "E1006")
+        self.assertEqual(wrong.score, 55)
+        self.assertIn("Unsicher-Schwelle", wrong.note)
+
+    def test_missing_identifier_caps_a_high_score(self):
+        result = self.matcher.match(
+            ExternalPerson(
+                vorname="Maria",
+                nachname="Berger",
+                plz="4020",
+                ort="Linz",
+                hauptfach="Kinderheilkunde",
+                oek="000111",
+            )
+        )
+        self.assertEqual(result.score, 100)
+        self.assertEqual(result.status, "uncertain")
+        self.assertEqual(result.evo_id, "E1003")
 
     def test_conflicting_identifiers_are_not_auto_mapped(self):
         result = self.matcher.match(
@@ -132,6 +185,8 @@ class AppTests(unittest.TestCase):
         )
         page = response.data.decode()
         self.assertIn("Automatisch", page)
+        self.assertIn("Sehr wahrscheinlich", page)
+        self.assertIn("Wahrscheinlich falsch", page)
         self.assertIn("E1001", page)
         self.assertIn("E1002", page)
         self.assertIn("Kein Treffer", page)

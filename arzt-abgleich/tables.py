@@ -25,8 +25,10 @@ ID_TOKENS = {"id", "nummer", "kunden", "customer", "nr", "kundennr"}
 
 STATUS_LABELS = {
     "auto": "Automatisch",
+    "very_likely": "Sehr wahrscheinlich",
     "likely": "Wahrscheinlich",
     "uncertain": "Unsicher",
+    "likely_wrong": "Wahrscheinlich falsch",
     "unmatched": "Kein Treffer",
     "manual": "Manuell",
 }

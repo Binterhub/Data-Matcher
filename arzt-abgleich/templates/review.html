@@ -5,7 +5,7 @@
 <div class="section-head">
     <div>
         <h1>{{ upload.filename }}</h1>
-        <p class="muted">Hochgeladen {{ upload.uploaded_at|vienna }} Uhr. Wahrscheinlich ab {{ likely_min }} %, unsicher ab {{ uncertain_min }} %.</p>
+        <p class="muted">Hochgeladen {{ upload.uploaded_at|vienna }} Uhr. Sehr wahrscheinlich ab {{ very_likely_min }} %, wahrscheinlich ab {{ likely_min }} %, unsicher ab {{ uncertain_min }} %, wahrscheinlich falsch ab {{ likely_wrong_min }} %.</p>
     </div>
     <div class="actions">
         <a class="button" href="{{ url_for('export_xlsx', upload_id=upload.id) }}">Excel</a>
