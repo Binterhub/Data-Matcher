@@ -770,8 +770,24 @@ def _next_open_row(upload_id: int, band: str, row_number: int, row_id: int):
 
 def _upload_progress(rows) -> dict:
     total = len(rows)
-    remaining = sum(1 for row in rows if not row["locked"])
-    return {"total": total, "remaining": remaining, "processed": total - remaining}
+    counts = {status: 0 for status in STATUS_ORDER}
+    remaining = 0
+    for row in rows:
+        if row["locked"]:
+            continue
+        remaining += 1
+        counts[row["match_status"]] = counts.get(row["match_status"], 0) + 1
+    bands = [
+        {"label": STATUS_LABELS[status].lower(), "count": counts[status]}
+        for status in STATUS_ORDER
+        if counts.get(status)
+    ]
+    return {
+        "total": total,
+        "remaining": remaining,
+        "processed": total - remaining,
+        "bands": bands,
+    }
 
 
 def _focus_state(upload_id: int, band: str, rows=None) -> dict:

@@ -5,7 +5,7 @@
 <div class="section-head">
     <div>
         <h1>{{ upload.filename }}</h1>
-        <p class="muted">{{ progress.remaining }} noch offen</p>
+        <p class="muted">{{ progress.remaining }} noch offen{% if progress.bands %} (davon {% for band in progress.bands %}{{ band.count }} {{ band.label }}{% if not loop.last %}, {% endif %}{% endfor %}){% endif %}</p>
         {% if not focus %}
         <p class="muted">Hochgeladen {{ upload.uploaded_at|vienna }} Uhr. Sehr wahrscheinlich ab {{ very_likely_min }} %, wahrscheinlich ab {{ likely_min }} %, unsicher ab {{ uncertain_min }} %, wahrscheinlich falsch ab {{ likely_wrong_min }} %.</p>
         {% endif %}

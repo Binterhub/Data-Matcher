@@ -249,6 +249,8 @@ class AppTests(unittest.TestCase):
         html = page.data.decode()
         self.assertIn("Zur Liste", html)
         self.assertIn("6 noch offen", html)
+        self.assertIn("davon", html)
+        self.assertIn("wahrscheinlich falsch", html)
         self.assertNotIn("von 2 offen", html)
         self.assertIn("Mueller Schmidt", html)
         self.assertNotIn('id="uncertain"', html)
