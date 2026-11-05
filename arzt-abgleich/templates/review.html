@@ -5,6 +5,7 @@
 <div class="section-head">
     <div>
         <h1>{{ upload.filename }}</h1>
+        <p class="muted">{{ progress.remaining }} noch offen</p>
         {% if not focus %}
         <p class="muted">Hochgeladen {{ upload.uploaded_at|vienna }} Uhr. Sehr wahrscheinlich ab {{ very_likely_min }} %, wahrscheinlich ab {{ likely_min }} %, unsicher ab {{ uncertain_min }} %, wahrscheinlich falsch ab {{ likely_wrong_min }} %.</p>
         {% endif %}
@@ -25,7 +26,7 @@
 </div>
 {% if focus %}
 <div class="focus-bar">
-    <h2>{{ focus.label }}{% if focus.row %} <span class="count">{{ focus.position }} von {{ focus.open_count }} offen</span>{% endif %}</h2>
+    <h2>{{ focus.label }}</h2>
     <p class="muted">{{ focus["copy"] }}</p>
 </div>
 {% if focus.row %}

@@ -292,8 +292,9 @@ def create_app(instance_path: str | None = None) -> Flask:
         if upload is None:
             abort(404)
         band = request.args.get("band", "")
-        focus = _focus_state(upload_id, band) if band in STATUS_ORDER else None
-        groups = [] if focus is not None else _groups(db.get_rows(g.db, upload_id), _requested_pages())
+        rows = db.get_rows(g.db, upload_id)
+        focus = _focus_state(upload_id, band, rows) if band in STATUS_ORDER else None
+        groups = [] if focus is not None else _groups(rows, _requested_pages())
         if focus is None:
             _attach_page_links(upload_id, groups)
         return render_template(
@@ -301,6 +302,7 @@ def create_app(instance_path: str | None = None) -> Flask:
             upload=upload,
             groups=groups,
             focus=focus,
+            progress=_upload_progress(rows),
             very_likely_min=VERY_LIKELY_MIN,
             likely_min=LIKELY_MIN,
             uncertain_min=UNCERTAIN_MIN,
@@ -766,8 +768,15 @@ def _next_open_row(upload_id: int, band: str, row_number: int, row_id: int):
     return None
 
 
-def _focus_state(upload_id: int, band: str) -> dict:
-    rows = db.get_rows(g.db, upload_id)
+def _upload_progress(rows) -> dict:
+    total = len(rows)
+    remaining = sum(1 for row in rows if not row["locked"])
+    return {"total": total, "remaining": remaining, "processed": total - remaining}
+
+
+def _focus_state(upload_id: int, band: str, rows=None) -> dict:
+    if rows is None:
+        rows = db.get_rows(g.db, upload_id)
     open_rows = [row for row in rows if row["match_status"] == band and not row["locked"]]
     requested = request.args.get("row", type=int)
     finished = request.args.get("done") == "1"
@@ -781,16 +790,12 @@ def _focus_state(upload_id: int, band: str) -> dict:
                     current = _next_open_row(upload_id, band, acted["row_number"], acted["id"])
         if current is None:
             current = open_rows[0] if open_rows else None
-    position = 0
-    if current is not None:
-        position = 1 + next(index for index, row in enumerate(open_rows) if row["id"] == current["id"])
     first = open_rows[0] if open_rows else None
     return {
         "key": band,
         "label": STATUS_LABELS[band],
         "copy": GROUP_COPY[band],
         "row": _row_view(current) if current is not None else None,
-        "position": position,
         "open_count": len(open_rows),
         "done": current is None,
         "first_url": (
