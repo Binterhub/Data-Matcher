@@ -83,6 +83,8 @@ a.button:visited {
 .button:hover { background: var(--teal-dark); }
 .button-quiet { background: transparent; color: var(--teal-dark); border: 1px solid var(--line); }
 .button-quiet:hover { background: #e7f3f3; }
+.button-reject { background: #c45c48; color: #fff; }
+.button-reject:hover { background: #a34a38; }
 .button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .progress-panel { margin-top: 1rem; }
@@ -117,15 +119,45 @@ a.button:visited {
 .pager { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.8rem; }
 .focus-bar { margin: 0.2rem 0 1rem; }
 .focus-bar h2 { margin-bottom: 0.2rem; }
-.focus-card { margin-bottom: 5rem; }
+.focus-card { margin-bottom: 6.5rem; }
+.focus-tools { margin-top: 0.8rem; }
 .decision-actions {
-    position: sticky;
+    position: fixed;
+    z-index: 20;
+    left: max(1rem, calc((100% - 1100px) / 2));
     bottom: 0;
-    z-index: 2;
+    width: min(1100px, calc(100% - 2rem));
+    height: 4.25rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0 0.2rem;
     background: var(--card);
-    padding: 0.8rem 0 0.2rem;
     border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 18px rgba(28, 36, 48, 0.08);
 }
+.decision-actions form { margin: 0; }
+.decision-actions .button {
+    flex: 0 0 auto;
+    min-width: 11.5rem;
+    height: 2.6rem;
+}
+.decision-actions .assign {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+}
+.decision-actions .assign label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.35rem;
+}
+.decision-actions .assign input { width: 7.5rem; }
 
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: top; }
