@@ -5,17 +5,45 @@
 <div class="section-head">
     <div>
         <h1>{{ upload.filename }}</h1>
+        {% if not focus %}
         <p class="muted">Hochgeladen {{ upload.uploaded_at|vienna }} Uhr. Sehr wahrscheinlich ab {{ very_likely_min }} %, wahrscheinlich ab {{ likely_min }} %, unsicher ab {{ uncertain_min }} %, wahrscheinlich falsch ab {{ likely_wrong_min }} %.</p>
+        {% endif %}
     </div>
     <div class="actions">
+        {% if focus %}
+        <a class="button button-quiet" href="{{ url_for('review', upload_id=upload.id) }}">Zur Liste</a>
+        {% endif %}
         <a class="button" href="{{ url_for('export_xlsx', upload_id=upload.id) }}">Excel</a>
         <a class="button button-quiet" href="{{ url_for('export_csv', upload_id=upload.id) }}">CSV</a>
+        {% if not focus %}
         <form method="post" action="{{ url_for('rematch', upload_id=upload.id) }}{{ qs }}" class="inline-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="button button-quiet">Offene Zeilen neu abgleichen</button>
         </form>
+        {% endif %}
     </div>
 </div>
+{% if focus %}
+<div class="focus-bar">
+    <h2>{{ focus.label }}{% if focus.row %} <span class="count">{{ focus.position }} von {{ focus.open_count }} offen</span>{% endif %}</h2>
+    <p class="muted">{{ focus["copy"] }}</p>
+</div>
+{% if focus.row %}
+    {% set row = focus.row %}
+    {% set group_key = focus.key %}
+    {% set group_label = focus.label %}
+    {% set focused = true %}
+    {% include "_match_card.html" %}
+{% else %}
+<section class="panel">
+    <p>Keine weitere offene Zeile in {{ focus.label }}.</p>
+    {% if focus.open_count %}
+    <p>Noch {{ focus.open_count }} offene Zeilen weiter vorne in dieser Gruppe.</p>
+    <a class="button" href="{{ focus.first_url }}">Erste offene Zeile</a>
+    {% endif %}
+</section>
+{% endif %}
+{% else %}
 <pre class="log">{{ upload.log_text }}</pre>
 <nav class="jump">
     {% for group in groups %}
@@ -25,78 +53,21 @@
 
 {% for group in groups %}
 <section class="panel" id="{{ group.key }}">
-    <h2>{{ group.label }} <span class="count">{{ group.total }}</span></h2>
+    <div class="section-head">
+        <h2>{{ group.label }} <span class="count">{{ group.total }}</span></h2>
+        {% if group.total %}
+        <a class="button button-quiet" href="{{ url_for('review', upload_id=upload.id, band=group.key) }}">Einzeln prüfen</a>
+        {% endif %}
+    </div>
     <p class="muted">{{ group.copy }}</p>
     {% if not group.rows %}
         <p>Keine Zeilen.</p>
     {% endif %}
     {% for row in group.rows %}
-    <article class="match-card status-{{ row.status }}">
-        <header>
-            <span class="badge status-{{ row.status }}">{{ group.label }}</span>
-            <strong>{{ row.score }} %</strong>
-            <span class="muted">Zeile {{ row.row_number }}</span>
-            {% if row.locked %}<span class="muted">gesperrt</span>{% endif %}
-        </header>
-        <div class="pair">
-            <div>
-                <h3>Externe Liste</h3>
-                <p>{{ row.titel }} {{ row.vorname }} {{ row.nachname }}</p>
-                <p>{{ row.plz }} {{ row.ort }}</p>
-                {% if row.hauptfach %}<p>{{ row.hauptfach }}</p>{% endif %}
-                {% if row.ids_label %}<p>{{ row.ids_label }}</p>{% endif %}
-                {% if row.oek %}<p>ÖK {{ row.oek }}</p>{% endif %}
-                {% if row.onekey %}<p>One-Key {{ row.onekey }}</p>{% endif %}
-            </div>
-            <div>
-                <h3>Bester Kandidat</h3>
-                {% if row.candidate %}
-                    <p>{{ row.candidate.titel }} {{ row.candidate.vorname }} {{ row.candidate.nachname }}</p>
-                    <p>Evo-ID {{ row.candidate.evo_id }}</p>
-                    <p>{{ row.candidate.plz }} {{ row.candidate.ort }}</p>
-                    {% if row.candidate.hauptfach %}<p>{{ row.candidate.hauptfach }}</p>{% endif %}
-                    {% if row.candidate.oek %}<p>ÖK {{ row.candidate.oek }}</p>{% endif %}
-                    {% if row.candidate.onekey %}<p>One-Key {{ row.candidate.onekey }}</p>{% endif %}
-                {% else %}
-                    <p>Kein ausreichender Kandidat.</p>
-                {% endif %}
-                {% if row.note %}<p class="note">{{ row.note }}</p>{% endif %}
-            </div>
-        </div>
-        <div class="actions">
-            {% if row.candidate and row.status != 'manual' %}
-            <form method="post" action="{{ url_for('accept_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="button">Vorschlag übernehmen</button>
-            </form>
-            {% endif %}
-            {% if row.candidate %}
-            <form method="post" action="{{ url_for('reject_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="button button-quiet">Kein Treffer</button>
-            </form>
-            {% endif %}
-            <form method="post" action="{{ url_for('assign_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}" class="assign">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <label>Evo-ID
-                    <input name="evo_id" data-evo-input value="{{ row.candidate.evo_id if row.candidate else '' }}" required>
-                </label>
-                <button type="submit" class="button button-quiet">Zuweisen</button>
-            </form>
-            <form class="search-form" data-search>
-                <label>In der Referenzliste suchen
-                    <input type="search" data-search-input placeholder="Name, Evo-ID oder Kennung">
-                </label>
-                <div class="search-results" data-search-results></div>
-            </form>
-            {% if row.locked %}
-            <form method="post" action="{{ url_for('reset_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="button button-quiet">Sperre lösen und neu abgleichen</button>
-            </form>
-            {% endif %}
-        </div>
-    </article>
+        {% set group_key = group.key %}
+        {% set group_label = group.label %}
+        {% set focused = false %}
+        {% include "_match_card.html" %}
     {% endfor %}
     {% if group.pages > 1 %}
     <nav class="pager">
@@ -107,6 +78,7 @@
     {% endif %}
 </section>
 {% endfor %}
+{% endif %}
 <script>
 document.querySelectorAll("[data-search]").forEach((form) => {
     const input = form.querySelector("[data-search-input]");

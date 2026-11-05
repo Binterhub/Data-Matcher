@@ -115,6 +115,17 @@ a.button:visited {
 .section-head { justify-content: space-between; margin-bottom: 0.6rem; }
 .jump { margin: 0.5rem 0 1rem; }
 .pager { display: flex; gap: 0.6rem; align-items: center; margin-top: 0.8rem; }
+.focus-bar { margin: 0.2rem 0 1rem; }
+.focus-bar h2 { margin-bottom: 0.2rem; }
+.focus-card { margin-bottom: 5rem; }
+.decision-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    background: var(--card);
+    padding: 0.8rem 0 0.2rem;
+    border-top: 1px solid var(--line);
+}
 
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid var(--line); vertical-align: top; }

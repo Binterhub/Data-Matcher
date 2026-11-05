@@ -1,0 +1,68 @@
+<article class="match-card status-{{ row.status }}{% if focused %} focus-card{% endif %}">
+    <header>
+        <span class="badge status-{{ row.status }}">{{ group_label }}</span>
+        <strong>{{ row.score }} %</strong>
+        <span class="muted">Zeile {{ row.row_number }}</span>
+        {% if row.locked %}<span class="muted">gesperrt</span>{% endif %}
+    </header>
+    <div class="pair">
+        <div>
+            <h3>Externe Liste</h3>
+            <p>{{ row.titel }} {{ row.vorname }} {{ row.nachname }}</p>
+            <p>{{ row.plz }} {{ row.ort }}</p>
+            {% if row.hauptfach %}<p>{{ row.hauptfach }}</p>{% endif %}
+            {% if row.ids_label %}<p>{{ row.ids_label }}</p>{% endif %}
+            {% if row.oek %}<p>ÖK {{ row.oek }}</p>{% endif %}
+            {% if row.onekey %}<p>One-Key {{ row.onekey }}</p>{% endif %}
+        </div>
+        <div>
+            <h3>Bester Kandidat</h3>
+            {% if row.candidate %}
+                <p>{{ row.candidate.titel }} {{ row.candidate.vorname }} {{ row.candidate.nachname }}</p>
+                <p>Evo-ID {{ row.candidate.evo_id }}</p>
+                <p>{{ row.candidate.plz }} {{ row.candidate.ort }}</p>
+                {% if row.candidate.hauptfach %}<p>{{ row.candidate.hauptfach }}</p>{% endif %}
+                {% if row.candidate.oek %}<p>ÖK {{ row.candidate.oek }}</p>{% endif %}
+                {% if row.candidate.onekey %}<p>One-Key {{ row.candidate.onekey }}</p>{% endif %}
+            {% else %}
+                <p>Kein ausreichender Kandidat.</p>
+            {% endif %}
+            {% if row.note %}<p class="note">{{ row.note }}</p>{% endif %}
+        </div>
+    </div>
+    <div class="actions{% if focused %} decision-actions{% endif %}">
+        {% if row.candidate and row.status != 'manual' %}
+        <form method="post" action="{{ url_for('accept_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="band" value="{{ group_key }}">
+            <button type="submit" class="button">Vorschlag übernehmen</button>
+        </form>
+        {% endif %}
+        {% if row.candidate %}
+        <form method="post" action="{{ url_for('reject_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="band" value="{{ group_key }}">
+            <button type="submit" class="button button-quiet">Kein Treffer</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('assign_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}" class="assign">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label>Evo-ID
+                <input name="evo_id" data-evo-input value="{{ row.candidate.evo_id if row.candidate else '' }}" required>
+            </label>
+            <button type="submit" class="button button-quiet">Zuweisen</button>
+        </form>
+        <form class="search-form" data-search>
+            <label>In der Referenzliste suchen
+                <input type="search" data-search-input placeholder="Name, Evo-ID oder Kennung">
+            </label>
+            <div class="search-results" data-search-results></div>
+        </form>
+        {% if row.locked %}
+        <form method="post" action="{{ url_for('reset_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="button button-quiet">Sperre lösen und neu abgleichen</button>
+        </form>
+        {% endif %}
+    </div>
+</article>

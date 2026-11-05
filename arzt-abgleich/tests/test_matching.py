@@ -1,4 +1,5 @@
 import io
+import re
 import sys
 import tempfile
 import unittest
@@ -191,6 +192,7 @@ class AppTests(unittest.TestCase):
         self.assertIn("E1002", page)
         self.assertIn("Kein Treffer", page)
         self.assertNotIn("Doppelt Eintrag", page)
+        self.assertIn('name="band" value="very_likely"', page)
 
         workbook_bytes = io.BytesIO()
         export = self.client.get("/uploads/1/export.xlsx")
@@ -219,6 +221,65 @@ class AppTests(unittest.TestCase):
         csv_export = self.client.get("/uploads/1/export.csv").data.decode("utf-8-sig")
         self.assertIn("Manuell", csv_export)
         self.assertIn("E1006", csv_export)
+
+    def _upload_samples(self):
+        self._login()
+        self.client.post(
+            "/referenz",
+            data={
+                "csrf_token": self._csrf(),
+                "file": (io.BytesIO((SAMPLES / "referenzliste.csv").read_bytes()), "referenzliste.csv"),
+            },
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/upload",
+            data={
+                "csrf_token": self._csrf(),
+                "file": (io.BytesIO((SAMPLES / "externe_liste.csv").read_bytes()), "externe_liste.csv"),
+            },
+            follow_redirects=True,
+        )
+
+    def test_accept_and_reject_open_the_next_row_in_the_same_band(self):
+        self._upload_samples()
+        page = self.client.get("/uploads/1?band=very_likely")
+        html = page.data.decode()
+        self.assertIn("Zur Liste", html)
+        self.assertIn("Mueller Schmidt", html)
+        self.assertNotIn('id="uncertain"', html)
+        accept = re.search(r'action="([^"]+/accept[^"]*)"', html)
+        self.assertIsNotNone(accept)
+        response = self.client.post(
+            accept.group(1),
+            data={"csrf_token": self._csrf(), "band": "very_likely"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        location = response.headers["Location"]
+        self.assertIn("band=very_likely", location)
+        self.assertIn("row=", location)
+        self.assertNotRegex(location, r"/uploads/1$")
+        followed = self.client.get(location)
+        body = followed.data.decode()
+        self.assertIn("Gruber", body)
+        self.assertNotIn("Mueller Schmidt", body)
+        self.assertIn("Zur Liste", body)
+        reject = re.search(r'action="([^"]+/reject[^"]*)"', body)
+        self.assertIsNotNone(reject)
+        response = self.client.post(
+            reject.group(1),
+            data={"csrf_token": self._csrf(), "band": "very_likely"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 302)
+        done_location = response.headers["Location"]
+        self.assertIn("band=very_likely", done_location)
+        self.assertIn("done=1", done_location)
+        done = self.client.get(done_location)
+        done_html = done.data.decode()
+        self.assertIn("Keine weitere offene Zeile", done_html)
+        self.assertNotIn('id="auto"', done_html)
 
     def test_excel_reference_roundtrip(self):
         frame = pd.read_csv(SAMPLES / "referenzliste.csv", dtype=str, keep_default_na=False)

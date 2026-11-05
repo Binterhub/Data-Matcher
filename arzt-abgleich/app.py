@@ -291,12 +291,16 @@ def create_app(instance_path: str | None = None) -> Flask:
         upload = db.get_upload(g.db, upload_id)
         if upload is None:
             abort(404)
-        groups = _groups(db.get_rows(g.db, upload_id), _requested_pages())
-        _attach_page_links(upload_id, groups)
+        band = request.args.get("band", "")
+        focus = _focus_state(upload_id, band) if band in STATUS_ORDER else None
+        groups = [] if focus is not None else _groups(db.get_rows(g.db, upload_id), _requested_pages())
+        if focus is None:
+            _attach_page_links(upload_id, groups)
         return render_template(
             "review.html",
             upload=upload,
             groups=groups,
+            focus=focus,
             very_likely_min=VERY_LIKELY_MIN,
             likely_min=LIKELY_MIN,
             uncertain_min=UNCERTAIN_MIN,
@@ -326,7 +330,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         row = _owned_row(upload_id, row_id)
         if not row["match_evo_id"]:
             flash("Diese Zeile hat keinen Vorschlag zum Übernehmen.", "error")
-            return _back_to_review(upload_id)
+            return _return_after_decision(upload_id, row, advance=False)
         fields = _fields_from_row(row)
         fields["match_status"] = "manual"
         fields["match_method"] = "manual"
@@ -334,12 +338,12 @@ def create_app(instance_path: str | None = None) -> Flask:
         fields["locked"] = 1
         db.update_match(g.db, row_id, fields)
         flash("Vorschlag übernommen.", "ok")
-        return _back_to_review(upload_id)
+        return _return_after_decision(upload_id, row, advance=True)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/reject")
     @login_required
     def reject_row(upload_id: int, row_id: int):
-        _owned_row(upload_id, row_id)
+        row = _owned_row(upload_id, row_id)
         db.update_match(
             g.db,
             row_id,
@@ -361,7 +365,7 @@ def create_app(instance_path: str | None = None) -> Flask:
             },
         )
         flash("Zeile als kein Treffer markiert.", "ok")
-        return _back_to_review(upload_id)
+        return _return_after_decision(upload_id, row, advance=True)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/assign")
     @login_required
@@ -738,6 +742,61 @@ def _requested_pages() -> dict[str, int]:
 def _back_to_review(upload_id: int):
     args = {status: page for status, page in _requested_pages().items() if page > 1}
     return redirect(url_for("review", upload_id=upload_id, **args))
+
+
+def _return_after_decision(upload_id: int, row, *, advance: bool):
+    """Stay on the next open row of the band the user was reviewing."""
+    band = request.form.get("band", "")
+    if band not in STATUS_ORDER:
+        return _back_to_review(upload_id)
+    if not advance:
+        return redirect(url_for("review", upload_id=upload_id, band=band, row=row["id"]))
+    nxt = _next_open_row(upload_id, band, row["row_number"], row["id"])
+    if nxt is None:
+        return redirect(url_for("review", upload_id=upload_id, band=band, done=1))
+    return redirect(url_for("review", upload_id=upload_id, band=band, row=nxt["id"]))
+
+
+def _next_open_row(upload_id: int, band: str, row_number: int, row_id: int):
+    for candidate in db.get_rows(g.db, upload_id):
+        if candidate["match_status"] != band or candidate["locked"]:
+            continue
+        if (candidate["row_number"], candidate["id"]) > (row_number, row_id):
+            return candidate
+    return None
+
+
+def _focus_state(upload_id: int, band: str) -> dict:
+    rows = db.get_rows(g.db, upload_id)
+    open_rows = [row for row in rows if row["match_status"] == band and not row["locked"]]
+    requested = request.args.get("row", type=int)
+    finished = request.args.get("done") == "1"
+    current = None
+    if not finished:
+        if requested:
+            current = next((row for row in open_rows if row["id"] == requested), None)
+            if current is None:
+                acted = next((row for row in rows if row["id"] == requested), None)
+                if acted is not None:
+                    current = _next_open_row(upload_id, band, acted["row_number"], acted["id"])
+        if current is None:
+            current = open_rows[0] if open_rows else None
+    position = 0
+    if current is not None:
+        position = 1 + next(index for index, row in enumerate(open_rows) if row["id"] == current["id"])
+    first = open_rows[0] if open_rows else None
+    return {
+        "key": band,
+        "label": STATUS_LABELS[band],
+        "copy": GROUP_COPY[band],
+        "row": _row_view(current) if current is not None else None,
+        "position": position,
+        "open_count": len(open_rows),
+        "done": current is None,
+        "first_url": (
+            url_for("review", upload_id=upload_id, band=band, row=first["id"]) if first is not None else None
+        ),
+    }
 
 
 def _review_page_url(upload_id: int, groups: list[dict], status: str, page: int) -> str:
