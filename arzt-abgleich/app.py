@@ -32,6 +32,7 @@ from flask import (
 from werkzeug.utils import secure_filename
 
 import db
+import learning
 from matching import (
     LIKELY_MIN,
     LIKELY_WRONG_MIN,
@@ -292,6 +293,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         upload = db.get_upload(g.db, upload_id)
         if upload is None:
             abort(404)
+        learning.prepare(g.db, _learning_rematch_factory)
         band = request.args.get("band", "")
         rows = db.get_rows(g.db, upload_id)
         focus = _focus_state(upload_id, band, rows) if band in STATUS_ORDER else None
@@ -334,6 +336,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         if not row["match_evo_id"]:
             flash("Diese Zeile hat keinen Vorschlag zum Übernehmen.", "error")
             return _return_after_decision(upload_id, row, advance=False)
+        learning.remember(g.db, row, "accept")
         fields = _fields_from_row(row)
         fields["match_status"] = "manual"
         fields["match_method"] = "manual"
@@ -347,6 +350,7 @@ def create_app(instance_path: str | None = None) -> Flask:
     @login_required
     def reject_row(upload_id: int, row_id: int):
         row = _owned_row(upload_id, row_id)
+        learning.remember(g.db, row, "reject")
         db.update_match(
             g.db,
             row_id,
@@ -381,6 +385,7 @@ def create_app(instance_path: str | None = None) -> Flask:
             flash("Evo-ID nicht in der aktuellen Referenzliste.", "error")
             return _back_to_review(upload_id)
         result = manual_result(_doctor_from_row(doctor), "Manuell zugeordnet.")
+        learning.remember_assignment(g.db, _owned_row(upload_id, row_id), doctor)
         db.update_match(g.db, row_id, _fields_from_match(result, 1))
         flash(f"{evo_id} zugeordnet.", "ok")
         return _back_to_review(upload_id)
@@ -392,6 +397,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         version = db.current_version(g.db)
         if version is None:
             abort(404)
+        learning.forget(g.db, row_id)
         result = _matcher(version["id"]).match(_person_from_row(row))
         db.update_match(g.db, row_id, _fields_from_match(result, 0))
         flash("Zeile neu abgeglichen.", "ok")
@@ -599,6 +605,18 @@ def _fields_from_row(row) -> dict:
         "match_onekey": row["match_onekey"],
         "locked": row["locked"],
     }
+
+
+def _learning_rematch_factory():
+    version = db.current_version(g.db)
+    if version is None:
+        return lambda row: None
+    matcher = _matcher(version["id"])
+
+    def rematch(row):
+        return matcher.match(_person_from_row(row))
+
+    return rematch
 
 
 def _matcher(version_id: int) -> Matcher:
@@ -962,6 +980,7 @@ def _row_view(row) -> dict:
         "note": row["match_note"],
         "locked": row["locked"],
         "candidate": candidate,
+        "hint": learning.hint_for_row(row),
         "gender_mismatch": genders_differ(
             row["titel"],
             row["vorname"],

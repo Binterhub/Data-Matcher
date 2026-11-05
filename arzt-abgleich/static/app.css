@@ -205,6 +205,42 @@ th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid va
     font-size: 0.82rem;
     font-weight: 700;
 }
+.learn-hint {
+    margin: 0.15rem 0 0.75rem;
+    padding: 0.55rem 0.7rem;
+    border-radius: 6px;
+    line-height: 1.35;
+}
+.learn-low {
+    background: #f8d4c4;
+    color: #6e241c;
+    border: 1px solid #e3a090;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+.learn-down {
+    background: #fde8e4;
+    color: #8a3328;
+    border: 1px solid #f0c2b8;
+    font-weight: 600;
+}
+.learn-caution {
+    background: #fff4d6;
+    color: #6a4b00;
+    border: 1px solid #edd89a;
+    font-weight: 600;
+}
+.learn-right {
+    background: #e5f4ea;
+    color: #1d5c32;
+    border: 1px solid #b7dfc4;
+    font-weight: 600;
+}
+.learn-minor {
+    background: #f4f7f8;
+    color: #3d4c55;
+    border: 1px solid #e1e8ec;
+}
 .field-place { display: flex; gap: 0.45rem; align-items: baseline; }
 .field-place .plz {
     flex: 0 0 3.25rem;

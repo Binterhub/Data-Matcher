@@ -5,6 +5,9 @@
         <span class="muted">Zeile {{ row.row_number }}</span>
         {% if row.locked %}<span class="muted">gesperrt</span>{% endif %}
     </header>
+    {% if row.hint %}
+    <p class="learn-hint learn-{{ row.hint.kind }}">{{ row.hint.text }}</p>
+    {% endif %}
     <div class="pair">
         <div class="pair-row">
             <h3>Externe Liste</h3>
