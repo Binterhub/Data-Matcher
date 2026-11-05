@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Abgleich prüfen{% endblock %}
 {% block content %}
+{% set qs = ('?' + page_query) if page_query else '' %}
 <div class="section-head">
     <div>
         <h1>{{ upload.filename }}</h1>
@@ -9,7 +10,7 @@
     <div class="actions">
         <a class="button" href="{{ url_for('export_xlsx', upload_id=upload.id) }}">Excel</a>
         <a class="button button-quiet" href="{{ url_for('export_csv', upload_id=upload.id) }}">CSV</a>
-        <form method="post" action="{{ url_for('rematch', upload_id=upload.id) }}" class="inline-form">
+        <form method="post" action="{{ url_for('rematch', upload_id=upload.id) }}{{ qs }}" class="inline-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="button button-quiet">Offene Zeilen neu abgleichen</button>
         </form>
@@ -18,13 +19,13 @@
 <pre class="log">{{ upload.log_text }}</pre>
 <nav class="jump">
     {% for group in groups %}
-        <a href="#{{ group.key }}">{{ group.label }} {{ group.rows|length }}</a>
+        <a href="#{{ group.key }}">{{ group.label }} {{ group.total }}</a>
     {% endfor %}
 </nav>
 
 {% for group in groups %}
 <section class="panel" id="{{ group.key }}">
-    <h2>{{ group.label }} <span class="count">{{ group.rows|length }}</span></h2>
+    <h2>{{ group.label }} <span class="count">{{ group.total }}</span></h2>
     <p class="muted">{{ group.copy }}</p>
     {% if not group.rows %}
         <p>Keine Zeilen.</p>
@@ -64,18 +65,18 @@
         </div>
         <div class="actions">
             {% if row.candidate and row.status != 'manual' %}
-            <form method="post" action="{{ url_for('accept_row', upload_id=upload.id, row_id=row.id) }}">
+            <form method="post" action="{{ url_for('accept_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="button">Vorschlag übernehmen</button>
             </form>
             {% endif %}
             {% if row.candidate %}
-            <form method="post" action="{{ url_for('reject_row', upload_id=upload.id, row_id=row.id) }}">
+            <form method="post" action="{{ url_for('reject_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="button button-quiet">Kein Treffer</button>
             </form>
             {% endif %}
-            <form method="post" action="{{ url_for('assign_row', upload_id=upload.id, row_id=row.id) }}" class="assign">
+            <form method="post" action="{{ url_for('assign_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}" class="assign">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <label>Evo-ID
                     <input name="evo_id" data-evo-input value="{{ row.candidate.evo_id if row.candidate else '' }}" required>
@@ -89,7 +90,7 @@
                 <div class="search-results" data-search-results></div>
             </form>
             {% if row.locked %}
-            <form method="post" action="{{ url_for('reset_row', upload_id=upload.id, row_id=row.id) }}">
+            <form method="post" action="{{ url_for('reset_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="button button-quiet">Sperre lösen und neu abgleichen</button>
             </form>
@@ -97,6 +98,13 @@
         </div>
     </article>
     {% endfor %}
+    {% if group.pages > 1 %}
+    <nav class="pager">
+        {% if group.prev_url %}<a class="button button-quiet" href="{{ group.prev_url }}">Zurück</a>{% endif %}
+        <span>Seite {{ group.page }} von {{ group.pages }} · {{ group.total }} Zeilen</span>
+        {% if group.next_url %}<a class="button button-quiet" href="{{ group.next_url }}">Weiter</a>{% endif %}
+    </nav>
+    {% endif %}
 </section>
 {% endfor %}
 <script>

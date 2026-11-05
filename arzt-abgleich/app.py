@@ -52,6 +52,7 @@ _MATCH_JOBS: dict[str, dict] = {}
 _MATCH_LOCK = threading.Lock()
 ALLOWED_SUFFIXES = {".csv", ".txt", ".xlsx", ".xlsm"}
 STATUS_ORDER = ("auto", "likely", "uncertain", "unmatched", "manual")
+PAGE_SIZE = 50
 GROUP_COPY = {
     "auto": "Exakte ÖK- oder One-Key-Nummer, 100 %.",
     "likely": f"Name, Fach und Adresse ab {LIKELY_MIN} %.",
@@ -260,7 +261,7 @@ def create_app(instance_path: str | None = None) -> Flask:
                 version_id,
                 stored,
             )
-            return redirect(url_for("review", upload_id=upload_id))
+            return _back_to_review(upload_id)
         return render_template("upload.html", version=version)
 
     @app.get("/upload/progress/<job_id>")
@@ -286,8 +287,16 @@ def create_app(instance_path: str | None = None) -> Flask:
         upload = db.get_upload(g.db, upload_id)
         if upload is None:
             abort(404)
-        groups = _groups(db.get_rows(g.db, upload_id))
-        return render_template("review.html", upload=upload, groups=groups, likely_min=LIKELY_MIN, uncertain_min=UNCERTAIN_MIN)
+        groups = _groups(db.get_rows(g.db, upload_id), _requested_pages())
+        _attach_page_links(upload_id, groups)
+        return render_template(
+            "review.html",
+            upload=upload,
+            groups=groups,
+            likely_min=LIKELY_MIN,
+            uncertain_min=UNCERTAIN_MIN,
+            page_query=request.query_string.decode(),
+        )
 
     @app.post("/uploads/<int:upload_id>/rematch")
     @login_required
@@ -303,7 +312,7 @@ def create_app(instance_path: str | None = None) -> Flask:
             result = matcher.match(_person_from_row(row))
             db.update_match(g.db, row["id"], _fields_from_match(result, 0))
         flash("Offene Zeilen neu abgeglichen.", "ok")
-        return redirect(url_for("review", upload_id=upload_id))
+        return _back_to_review(upload_id)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/accept")
     @login_required
@@ -311,7 +320,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         row = _owned_row(upload_id, row_id)
         if not row["match_evo_id"]:
             flash("Diese Zeile hat keinen Vorschlag zum Übernehmen.", "error")
-            return redirect(url_for("review", upload_id=upload_id))
+            return _back_to_review(upload_id)
         fields = _fields_from_row(row)
         fields["match_status"] = "manual"
         fields["match_method"] = "manual"
@@ -319,7 +328,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         fields["locked"] = 1
         db.update_match(g.db, row_id, fields)
         flash("Vorschlag übernommen.", "ok")
-        return redirect(url_for("review", upload_id=upload_id))
+        return _back_to_review(upload_id)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/reject")
     @login_required
@@ -346,7 +355,7 @@ def create_app(instance_path: str | None = None) -> Flask:
             },
         )
         flash("Zeile als kein Treffer markiert.", "ok")
-        return redirect(url_for("review", upload_id=upload_id))
+        return _back_to_review(upload_id)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/assign")
     @login_required
@@ -357,11 +366,11 @@ def create_app(instance_path: str | None = None) -> Flask:
         doctor = db.find_doctor(g.db, version["id"], evo_id) if version and evo_id else None
         if doctor is None:
             flash("Evo-ID nicht in der aktuellen Referenzliste.", "error")
-            return redirect(url_for("review", upload_id=upload_id))
+            return _back_to_review(upload_id)
         result = manual_result(_doctor_from_row(doctor), "Manuell zugeordnet.")
         db.update_match(g.db, row_id, _fields_from_match(result, 1))
         flash(f"{evo_id} zugeordnet.", "ok")
-        return redirect(url_for("review", upload_id=upload_id))
+        return _back_to_review(upload_id)
 
     @app.post("/uploads/<int:upload_id>/rows/<int:row_id>/reset")
     @login_required
@@ -373,7 +382,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         result = _matcher(version["id"]).match(_person_from_row(row))
         db.update_match(g.db, row_id, _fields_from_match(result, 0))
         flash("Zeile neu abgeglichen.", "ok")
-        return redirect(url_for("review", upload_id=upload_id))
+        return _back_to_review(upload_id)
 
     @app.get("/uploads/<int:upload_id>/export.xlsx")
     @login_required
@@ -708,19 +717,67 @@ def _count_by_upload() -> dict[int, dict[str, int]]:
     return grouped
 
 
-def _groups(rows) -> list[dict]:
-    buckets = {status: [] for status in STATUS_ORDER}
+def _requested_pages() -> dict[str, int]:
+    pages = {}
+    for status in STATUS_ORDER:
+        raw = request.args.get(status, "1")
+        try:
+            pages[status] = max(1, int(raw))
+        except (TypeError, ValueError):
+            pages[status] = 1
+    return pages
+
+
+def _back_to_review(upload_id: int):
+    args = {status: page for status, page in _requested_pages().items() if page > 1}
+    return redirect(url_for("review", upload_id=upload_id, **args))
+
+
+def _review_page_url(upload_id: int, groups: list[dict], status: str, page: int) -> str:
+    args = {}
+    for group in groups:
+        current = page if group["key"] == status else group["page"]
+        if current > 1:
+            args[group["key"]] = current
+    return url_for("review", upload_id=upload_id, **args) + "#" + status
+
+
+def _attach_page_links(upload_id: int, groups: list[dict]) -> None:
+    for group in groups:
+        group["prev_url"] = (
+            _review_page_url(upload_id, groups, group["key"], group["page"] - 1) if group["page"] > 1 else None
+        )
+        group["next_url"] = (
+            _review_page_url(upload_id, groups, group["key"], group["page"] + 1)
+            if group["page"] < group["pages"]
+            else None
+        )
+
+
+def _groups(rows, pages: dict[str, int] | None = None) -> list[dict]:
+    requested = pages or {}
+    buckets: dict[str, list] = {status: [] for status in STATUS_ORDER}
     for row in rows:
-        buckets.setdefault(row["match_status"], []).append(_row_view(row))
-    return [
-        {
-            "key": status,
-            "label": STATUS_LABELS[status],
-            "copy": GROUP_COPY[status],
-            "rows": buckets[status],
-        }
-        for status in STATUS_ORDER
-    ]
+        buckets.setdefault(row["match_status"], []).append(row)
+    groups = []
+    for status in STATUS_ORDER:
+        bucket = buckets.get(status, [])
+        total = len(bucket)
+        page_count = max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE) if total else 1
+        page = min(requested.get(status, 1), page_count)
+        start = (page - 1) * PAGE_SIZE
+        groups.append(
+            {
+                "key": status,
+                "label": STATUS_LABELS[status],
+                "copy": GROUP_COPY[status],
+                "rows": [_row_view(row) for row in bucket[start : start + PAGE_SIZE]],
+                "total": total,
+                "page": page,
+                "pages": page_count,
+            }
+        )
+    return groups
 
 
 def _row_view(row) -> dict:
