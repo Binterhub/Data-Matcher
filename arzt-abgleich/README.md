@@ -45,7 +45,7 @@ Text is lowercased, `ä/ö/ü/ß` become `ae/oe/ue/ss`, and other punctuation be
 - Exact ÖK-Nummer or One-Key-Nummer: 100 %, status **Automatisch**.
 - If those two ids point at different people, the row stays **Unsicher**.
 - Otherwise the score is a percentage of name (60 %), address (25 %), and specialty (15 %). Missing specialty or address is left out and the remaining weights are rescaled.
-- Fuzzy score ≥ 92: **Sehr wahrscheinlich**. Score ≥ 85 and < 92: **Wahrscheinlich**. Score ≥ 60 and < 85: **Unsicher**. Score ≥ 40 and < 60: **Wahrscheinlich falsch** (the candidate is kept, but it is probably the wrong doctor). Below 40: **Kein Treffer**, with no candidate.
+- Fuzzy score ≥ 92: **Sehr wahrscheinlich**. Score ≥ 85 and < 92: **Wahrscheinlich**. Score ≥ 75 and < 85: **Unsicher**. Score ≥ 40 and < 75: **Wahrscheinlich falsch** (the candidate is kept, but it is probably the wrong doctor). Below 40: **Kein Treffer**, with no candidate.
 
 An external id that is not in the reference list keeps a name match from being automatic; the row is capped at **Unsicher**.
 

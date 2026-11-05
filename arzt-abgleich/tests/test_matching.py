@@ -56,7 +56,7 @@ class MatchTests(unittest.TestCase):
             "K2": ("very_likely", "E1002", "fuzzy"),
             "K3": ("auto", "E1003", "onekey"),
             "K4": ("very_likely", "E1004", "fuzzy"),
-            "K5": ("uncertain", "E1005", "fuzzy"),
+            "K5": ("likely_wrong", "E1005", "fuzzy"),
             "K6": ("unmatched", None, "none"),
         }
         self.assertEqual(len(rows), len(expected))
@@ -80,7 +80,9 @@ class MatchTests(unittest.TestCase):
         self.assertEqual(classify_score(91), "likely")
         self.assertEqual(classify_score(85), "likely")
         self.assertEqual(classify_score(84), "uncertain")
-        self.assertEqual(classify_score(60), "uncertain")
+        self.assertEqual(classify_score(75), "uncertain")
+        self.assertEqual(classify_score(74), "likely_wrong")
+        self.assertEqual(classify_score(60), "likely_wrong")
         self.assertEqual(classify_score(59), "likely_wrong")
         self.assertEqual(classify_score(40), "likely_wrong")
         self.assertEqual(classify_score(39), "unmatched")
