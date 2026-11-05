@@ -191,6 +191,20 @@ th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid va
 .pair-row:first-child { border-top: 0; padding-top: 0; }
 .pair-row > h3,
 .pair-row > p { margin: 0; }
+.gender-mismatch .person-name {
+    background: #f8d4c4;
+    color: #8a3328;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 0 0.25rem;
+}
+.gender-flag {
+    display: inline-block;
+    margin-left: 0.45rem;
+    color: #a33b30;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
 .field-place { display: flex; gap: 0.45rem; align-items: baseline; }
 .field-place .plz {
     flex: 0 0 3.25rem;

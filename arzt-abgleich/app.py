@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import re
 import secrets
 import sqlite3
 import threading
@@ -867,6 +868,66 @@ def _groups(rows, pages: dict[str, int] | None = None) -> list[dict]:
     return groups
 
 
+_TITLE_FEMALE = {"frau", "fr", "oä", "fä", "oberärztin", "fachärztin", "ärztin"}
+_TITLE_MALE = {"herr", "hr", "oa", "fa", "oberarzt", "facharzt", "arzt"}
+_NAME_SKIP = {
+    "dr", "med", "prof", "univ", "mag", "prim", "oa", "oä", "fa", "fä", "dipl", "ing",
+    "ddr", "phd", "assoc", "priv", "doz", "chefarzt", "bgdr", "or", "mr", "di", "ddr",
+}
+_GENDER_DETECTOR = None
+
+
+def _gender_detector():
+    global _GENDER_DETECTOR
+    if _GENDER_DETECTOR is None:
+        import gender_guesser.detector as gender
+
+        _GENDER_DETECTOR = gender.Detector(case_sensitive=False)
+    return _GENDER_DETECTOR
+
+
+def gender_from_title(titel: str) -> str | None:
+    """Read Herr/Frau and gendered Austrian titles such as OA/OÄ and FA/FÄ."""
+    found = set()
+    for token in re.findall(r"[a-zäöüß]+", (titel or "").casefold()):
+        if token in _TITLE_FEMALE:
+            found.add("f")
+        elif token in _TITLE_MALE:
+            found.add("m")
+    if found == {"f"}:
+        return "f"
+    if found == {"m"}:
+        return "m"
+    return None
+
+
+def gender_from_name(vorname: str) -> str | None:
+    """Infer gender from the first given name. Unknown and unisex names stay unset."""
+    detector = _gender_detector()
+    for part in re.split(r"[\s,;/]+", (vorname or "").strip()):
+        token = part.strip(".").strip()
+        if not token or token.casefold().strip(".") in _NAME_SKIP:
+            continue
+        guess = detector.get_gender(token, "germany")
+        if guess in {"unknown", "andy"} and "-" in token:
+            guess = detector.get_gender(token.split("-", 1)[0], "germany")
+        if guess in {"male", "mostly_male"}:
+            return "m"
+        if guess in {"female", "mostly_female"}:
+            return "f"
+    return None
+
+
+def person_gender(titel: str, vorname: str) -> str | None:
+    return gender_from_title(titel) or gender_from_name(vorname)
+
+
+def genders_differ(left_titel: str, left_name: str, right_titel: str, right_name: str) -> bool:
+    left = person_gender(left_titel, left_name)
+    right = person_gender(right_titel, right_name)
+    return bool(left and right and left != right)
+
+
 def _row_view(row) -> dict:
     customer_ids = json.loads(row["customer_ids"] or "{}")
     candidate = None
@@ -901,6 +962,12 @@ def _row_view(row) -> dict:
         "note": row["match_note"],
         "locked": row["locked"],
         "candidate": candidate,
+        "gender_mismatch": genders_differ(
+            row["titel"],
+            row["vorname"],
+            row["match_titel"] if row["match_evo_id"] else "",
+            row["match_vorname"] if row["match_evo_id"] else "",
+        ),
     }
 
 

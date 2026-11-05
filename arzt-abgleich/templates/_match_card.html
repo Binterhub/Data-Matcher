@@ -10,11 +10,16 @@
             <h3>Externe Liste</h3>
             <h3>Bester Kandidat</h3>
         </div>
-        <div class="pair-row">
-            <p>{{ row.titel }} {{ row.vorname }} {{ row.nachname }}</p>
+        <div class="pair-row{% if row.gender_mismatch %} gender-mismatch{% endif %}">
+            <p>
+                <span class="person-name">{{ row.titel }} {{ row.vorname }}</span>
+                {{ row.nachname }}
+                {% if row.gender_mismatch %}<span class="gender-flag">Geschlecht weicht ab</span>{% endif %}
+            </p>
             <p>
                 {% if row.candidate %}
-                    {{ row.candidate.titel }} {{ row.candidate.vorname }} {{ row.candidate.nachname }}
+                    <span class="person-name">{{ row.candidate.titel }} {{ row.candidate.vorname }}</span>
+                    {{ row.candidate.nachname }}
                 {% else %}
                     Kein ausreichender Kandidat.
                 {% endif %}

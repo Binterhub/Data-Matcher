@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pandas as pd
 from openpyxl import load_workbook
 
-from app import create_app
+from app import create_app, gender_from_name, gender_from_title, genders_differ
 from matching import (
     Doctor,
     ExternalPerson,
@@ -30,6 +30,23 @@ def doctors_from_sample() -> list[Doctor]:
     parsed, _log, skipped = parse_reference(frame)
     assert skipped == 1
     return [Doctor(**row) for row in parsed]
+
+
+class GenderTests(unittest.TestCase):
+    def test_title_and_first_name_genders(self):
+        self.assertEqual(gender_from_title("Herr Dr."), "m")
+        self.assertEqual(gender_from_title("Frau Dr."), "f")
+        self.assertEqual(gender_from_title("OA Dr."), "m")
+        self.assertEqual(gender_from_title("OÄ Dr."), "f")
+        self.assertIsNone(gender_from_title("Dr."))
+        self.assertEqual(gender_from_name("Anna Christina"), "f")
+        self.assertEqual(gender_from_name("Thomas"), "m")
+        self.assertIsNone(gender_from_name("Kim"))
+        self.assertTrue(genders_differ("Dr.", "Anna", "Dr.", "Thomas"))
+        self.assertTrue(genders_differ("Herr", "Anna", "Dr.", "Anna"))
+        self.assertFalse(genders_differ("Dr.", "Anna", "OÄ Dr.", "Anna"))
+        self.assertFalse(genders_differ("Dr.", "Kim", "Dr.", "Thomas"))
+        self.assertFalse(genders_differ("Dr.", "Anna", "", ""))
 
 
 class NormalizeTests(unittest.TestCase):
