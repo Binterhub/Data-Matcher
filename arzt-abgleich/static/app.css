@@ -179,7 +179,24 @@ th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid va
 .status-manual { background: #eadff8; }
 
 .match-card header { display: flex; gap: 0.7rem; align-items: center; margin-bottom: 0.6rem; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.pair { display: grid; }
+.pair-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1.25rem;
+    align-items: start;
+    padding: 0.32rem 0;
+    border-top: 1px solid #e6eef3;
+}
+.pair-row:first-child { border-top: 0; padding-top: 0; }
+.pair-row > h3,
+.pair-row > p { margin: 0; }
+.field-place { display: flex; gap: 0.45rem; align-items: baseline; }
+.field-place .plz {
+    flex: 0 0 3.25rem;
+    font-variant-numeric: tabular-nums;
+}
+.match-card > .note { margin: 0.45rem 0 0; }
 .match-card .actions { margin-top: 0.8rem; align-items: end; }
 .assign, .search-form { display: grid; gap: 0.35rem; }
 .search-results { display: grid; gap: 0.25rem; }
@@ -207,6 +224,6 @@ th, td { text-align: left; padding: 0.45rem 0.35rem; border-bottom: 1px solid va
 .flash-error { background: #fde2e1; }
 
 @media (max-width: 720px) {
-    .pair { grid-template-columns: 1fr; }
+    .pair-row { grid-template-columns: 1fr; }
     .inline-form { margin-left: 0; }
 }

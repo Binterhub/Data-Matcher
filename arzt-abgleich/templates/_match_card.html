@@ -6,30 +6,50 @@
         {% if row.locked %}<span class="muted">gesperrt</span>{% endif %}
     </header>
     <div class="pair">
-        <div>
+        <div class="pair-row">
             <h3>Externe Liste</h3>
-            <p>{{ row.titel }} {{ row.vorname }} {{ row.nachname }}</p>
-            <p>{{ row.plz }} {{ row.ort }}</p>
-            {% if row.hauptfach %}<p>{{ row.hauptfach }}</p>{% endif %}
-            {% if row.ids_label %}<p>{{ row.ids_label }}</p>{% endif %}
-            {% if row.oek %}<p>ÖK {{ row.oek }}</p>{% endif %}
-            {% if row.onekey %}<p>One-Key {{ row.onekey }}</p>{% endif %}
-        </div>
-        <div>
             <h3>Bester Kandidat</h3>
-            {% if row.candidate %}
-                <p>{{ row.candidate.titel }} {{ row.candidate.vorname }} {{ row.candidate.nachname }}</p>
-                <p>Evo-ID {{ row.candidate.evo_id }}</p>
-                <p>{{ row.candidate.plz }} {{ row.candidate.ort }}</p>
-                {% if row.candidate.hauptfach %}<p>{{ row.candidate.hauptfach }}</p>{% endif %}
-                {% if row.candidate.oek %}<p>ÖK {{ row.candidate.oek }}</p>{% endif %}
-                {% if row.candidate.onekey %}<p>One-Key {{ row.candidate.onekey }}</p>{% endif %}
-            {% else %}
-                <p>Kein ausreichender Kandidat.</p>
-            {% endif %}
-            {% if row.note %}<p class="note">{{ row.note }}</p>{% endif %}
         </div>
+        <div class="pair-row">
+            <p>{{ row.titel }} {{ row.vorname }} {{ row.nachname }}</p>
+            <p>
+                {% if row.candidate %}
+                    {{ row.candidate.titel }} {{ row.candidate.vorname }} {{ row.candidate.nachname }}
+                {% else %}
+                    Kein ausreichender Kandidat.
+                {% endif %}
+            </p>
+        </div>
+        <div class="pair-row">
+            <p class="field-place"><span class="plz">{{ row.plz }}</span><span>{{ row.ort }}</span></p>
+            <p class="field-place">
+                {% if row.candidate %}<span class="plz">{{ row.candidate.plz }}</span><span>{{ row.candidate.ort }}</span>{% endif %}
+            </p>
+        </div>
+        <div class="pair-row">
+            <p class="field-fach">{{ row.hauptfach }}</p>
+            <p class="field-fach">{{ row.candidate.hauptfach if row.candidate else "" }}</p>
+        </div>
+        {% if row.oek or (row.candidate and row.candidate.oek) %}
+        <div class="pair-row">
+            <p>{% if row.oek %}ÖK {{ row.oek }}{% endif %}</p>
+            <p>{% if row.candidate and row.candidate.oek %}ÖK {{ row.candidate.oek }}{% endif %}</p>
+        </div>
+        {% endif %}
+        {% if row.onekey or (row.candidate and row.candidate.onekey) %}
+        <div class="pair-row">
+            <p>{% if row.onekey %}One-Key {{ row.onekey }}{% endif %}</p>
+            <p>{% if row.candidate and row.candidate.onekey %}One-Key {{ row.candidate.onekey }}{% endif %}</p>
+        </div>
+        {% endif %}
+        {% if row.ids_label or row.candidate %}
+        <div class="pair-row">
+            <p class="muted">{% if row.ids_label %}{{ row.ids_label }}{% endif %}</p>
+            <p class="muted">{% if row.candidate %}Evo-ID {{ row.candidate.evo_id }}{% endif %}</p>
+        </div>
+        {% endif %}
     </div>
+    {% if row.note %}<p class="note">{{ row.note }}</p>{% endif %}
     {% if focused %}
     <div class="decision-actions" data-decision-bar>
         <form method="post" action="{{ url_for('accept_row', upload_id=upload.id, row_id=row.id) }}{{ qs }}">
