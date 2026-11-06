@@ -67,6 +67,30 @@ input[type="text"], input[type="password"], input[type="search"], input:not([typ
 }
 input[type="file"] { font-weight: 400; }
 
+.password-field {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.password-field input { flex: 1; min-width: 0; }
+.password-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--ink);
+    cursor: pointer;
+}
+.password-toggle svg { width: 1.15rem; height: 1.15rem; }
+.password-toggle .icon-hide { display: none; }
+.password-toggle[aria-pressed="true"] .icon-show { display: none; }
+.password-toggle[aria-pressed="true"] .icon-hide { display: block; }
+
 .button,
 a.button,
 a.button:visited {

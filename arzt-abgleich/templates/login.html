@@ -10,9 +10,29 @@
             <input name="username" autocomplete="username" required>
         </label>
         <label>Passwort
-            <input name="password" type="password" autocomplete="current-password" required>
+            <span class="password-field">
+                <input name="password" type="password" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" aria-label="Passwort anzeigen" aria-pressed="false">
+                    <svg class="icon-show" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"/>
+                        <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    <svg class="icon-hide" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="M3 3l18 18M10.6 6.2A10 10 0 0 1 12 6c6.5 0 10 6 10 6a18 18 0 0 1-3.2 3.8M6.1 6.1C3.5 8 2 12 2 12s3.5 6 10 6c1.5 0 2.9-.3 4.1-.9"/>
+                    </svg>
+                </button>
+            </span>
         </label>
         <button type="submit" class="button">Anmelden</button>
     </form>
 </section>
+<script>
+document.querySelector(".password-toggle").addEventListener("click", function () {
+    var input = document.querySelector(".password-field input");
+    var show = input.type === "password";
+    input.type = show ? "text" : "password";
+    this.setAttribute("aria-pressed", show ? "true" : "false");
+    this.setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
+});
+</script>
 {% endblock %}
