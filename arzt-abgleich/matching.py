@@ -53,6 +53,20 @@ def normalize_plz(value) -> str:
     return re.sub(r"\D", "", "" if value is None else str(value))
 
 
+_WAHLART_YES = {"ja", "j", "yes", "y", "true", "1", "wahr", "privat"}
+_WAHLART_NO = {"nein", "n", "no", "false", "0", "falsch"}
+
+
+def normalize_wahlart(value) -> str:
+    """Yes means the doctor treats patients privately."""
+    text = normalize_text(value)
+    if text in _WAHLART_YES:
+        return "ja"
+    if text in _WAHLART_NO:
+        return "nein"
+    return ""
+
+
 def _token_blend(left: str, right: str) -> int:
     if not left or not right:
         return 0
@@ -93,6 +107,7 @@ class Doctor:
     hauptfach: str = ""
     oek: str = ""
     onekey: str = ""
+    wahlart: str = ""
 
     def __post_init__(self) -> None:
         self.evo_id = str(self.evo_id or "").strip()
@@ -104,6 +119,7 @@ class Doctor:
         self.hauptfach = _clean(self.hauptfach)
         self.oek = _clean(self.oek)
         self.onekey = _clean(self.onekey)
+        self.wahlart = normalize_wahlart(self.wahlart)
         self.vorname_n = normalize_text(self.vorname)
         self.nachname_n = normalize_text(self.nachname)
         self.ort_n = normalize_text(self.ort)
@@ -122,6 +138,7 @@ class ExternalPerson:
     hauptfach: str = ""
     oek: str = ""
     onekey: str = ""
+    wahlart: str = ""
     titel: str = ""
 
     def __post_init__(self) -> None:
@@ -133,6 +150,7 @@ class ExternalPerson:
         self.hauptfach = _clean(self.hauptfach)
         self.oek = _clean(self.oek)
         self.onekey = _clean(self.onekey)
+        self.wahlart = normalize_wahlart(self.wahlart)
         self.vorname_n = normalize_text(self.vorname)
         self.nachname_n = normalize_text(self.nachname)
         self.ort_n = normalize_text(self.ort)
@@ -157,6 +175,7 @@ class MatchResult:
     hauptfach: str = ""
     oek: str = ""
     onekey: str = ""
+    wahlart: str = ""
 
 
 def _clean(value) -> str:
@@ -185,6 +204,7 @@ def _from_doctor(doctor: Doctor | None, score: int, status: str, method: str, no
         hauptfach=doctor.hauptfach,
         oek=doctor.oek,
         onekey=doctor.onekey,
+        wahlart=doctor.wahlart,
     )
 
 
@@ -216,17 +236,26 @@ def specialty_score(person, doctor: Doctor) -> tuple[int, bool]:
     return _token_blend(person.fach_n, doctor.fach_n), True
 
 
+def wahlart_score(person, doctor: Doctor) -> tuple[int, bool]:
+    if not person.wahlart or not doctor.wahlart:
+        return 0, False
+    return (100 if person.wahlart == doctor.wahlart else 0), True
+
+
 def combined_score(person, doctor: Doctor) -> int:
-    """Weighted percentage. Missing specialty or address is left out and the rest is rescaled."""
+    """Weighted percentage. Missing specialty, address, or Wahlart is left out and the rest is rescaled."""
     components: list[tuple[int, float]] = []
     name, _last = name_parts(person, doctor)
     components.append((name, 0.60))
     address, has_address = address_score(person, doctor)
     specialty, has_specialty = specialty_score(person, doctor)
+    wahlart, has_wahlart = wahlart_score(person, doctor)
     if has_address:
         components.append((address, 0.25))
     if has_specialty:
         components.append((specialty, 0.15))
+    if has_wahlart:
+        components.append((wahlart, 0.10))
     weight = sum(item[1] for item in components)
     if weight <= 0:
         return 0

@@ -188,7 +188,8 @@ def create_app(instance_path: str | None = None) -> Flask:
         counts = _count_by_upload()
         for upload in db.list_uploads(g.db):
             uploads.append({"row": upload, "counts": counts.get(upload["id"], {})})
-        return render_template("dashboard.html", version=version, uploads=uploads)
+        wahlart = db.wahlart_summary(g.db, version["id"]) if version else None
+        return render_template("dashboard.html", version=version, uploads=uploads, wahlart=wahlart)
 
     @app.route("/referenz", methods=["GET", "POST"])
     @login_required
@@ -364,6 +365,7 @@ def create_app(instance_path: str | None = None) -> Flask:
                 "match_hauptfach": "",
                 "match_oek": "",
                 "match_onekey": "",
+                "match_wahlart": "",
                 "locked": 1,
             },
         )
@@ -547,6 +549,7 @@ def _doctor_from_row(row) -> Doctor:
         hauptfach=row["hauptfach"],
         oek=row["oek"],
         onekey=row["onekey"],
+        wahlart=row["wahlart"],
     )
 
 
@@ -560,6 +563,7 @@ def _person_from_row(row) -> ExternalPerson:
         hauptfach=row["hauptfach"],
         oek=row["oek"],
         onekey=row["onekey"],
+        wahlart=row["wahlart"],
     )
 
 
@@ -578,6 +582,7 @@ def _fields_from_match(result, locked: int) -> dict:
         "match_hauptfach": result.hauptfach,
         "match_oek": result.oek,
         "match_onekey": result.onekey,
+        "match_wahlart": result.wahlart,
         "locked": locked,
     }
 
@@ -597,6 +602,7 @@ def _fields_from_row(row) -> dict:
         "match_hauptfach": row["match_hauptfach"],
         "match_oek": row["match_oek"],
         "match_onekey": row["match_onekey"],
+        "match_wahlart": row["match_wahlart"],
         "locked": row["locked"],
     }
 
@@ -630,6 +636,7 @@ def _match_rows(matcher: Matcher, parsed_rows: list[dict], on_progress=None) -> 
                 hauptfach=parsed["hauptfach"],
                 oek=parsed["oek"],
                 onekey=parsed["onekey"],
+                wahlart=parsed["wahlart"],
             )
         )
         stored.append({**parsed, **_fields_from_match(result, 0)})
@@ -942,6 +949,7 @@ def _row_view(row) -> dict:
             "hauptfach": row["match_hauptfach"],
             "oek": row["match_oek"],
             "onekey": row["match_onekey"],
+            "wahlart": row["match_wahlart"],
         }
     return {
         "id": row["id"],
@@ -956,6 +964,7 @@ def _row_view(row) -> dict:
         "hauptfach": row["hauptfach"],
         "oek": row["oek"],
         "onekey": row["onekey"],
+        "wahlart": row["wahlart"],
         "score": row["match_score"],
         "status": row["match_status"],
         "method": row["match_method"],
@@ -997,6 +1006,7 @@ def _export_frame(upload_id: int):
                 "hauptfach": view["hauptfach"],
                 "oek": view["oek"],
                 "onekey": view["onekey"],
+                "wahlart": view["wahlart"],
                 "match_status": view["status"],
                 "match_score": view["score"],
                 "match_method": view["method"],
@@ -1010,6 +1020,7 @@ def _export_frame(upload_id: int):
                 "match_hauptfach": view["candidate"]["hauptfach"] if view["candidate"] else "",
                 "match_oek": view["candidate"]["oek"] if view["candidate"] else "",
                 "match_onekey": view["candidate"]["onekey"] if view["candidate"] else "",
+                "match_wahlart": view["candidate"]["wahlart"] if view["candidate"] else "",
             }
         )
     return export_frame(id_columns, records)

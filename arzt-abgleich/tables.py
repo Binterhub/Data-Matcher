@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from matching import normalize_text
+from matching import normalize_text, normalize_wahlart
 
 HEADER_ALIASES = {
     "evo_id": ["evo id", "evoid", "evo"],
@@ -19,6 +19,7 @@ HEADER_ALIASES = {
     "hauptfach": ["hauptfach", "fach", "fachrichtung", "fachgebiet", "specialty"],
     "oek": ["ok nummer", "oek nummer", "oeknummer", "oknummer", "oek", "aerztenummer", "arztnummer"],
     "onekey": ["one key nummer", "onekey nummer", "one key", "onekey"],
+    "wahlart": ["wahlart", "wahl arzt", "wahlarzt", "privatpatient", "privat"],
 }
 
 ID_TOKENS = {"id", "nummer", "kunden", "customer", "nr", "kundennr"}
@@ -137,6 +138,7 @@ def parse_reference(frame: pd.DataFrame) -> tuple[list[dict], str, int]:
                 "hauptfach": _cell(row, mapping.get("hauptfach")),
                 "oek": _cell(row, mapping.get("oek")),
                 "onekey": _cell(row, mapping.get("onekey")),
+                "wahlart": normalize_wahlart(_cell(row, mapping.get("wahlart"))),
             }
         )
     recognized = ", ".join(mapping[field] for field in mapping)
@@ -178,6 +180,7 @@ def parse_external(frame: pd.DataFrame) -> tuple[list[dict], list[str], str]:
                 "hauptfach": _cell(row, mapping.get("hauptfach")),
                 "oek": _cell(row, mapping.get("oek")),
                 "onekey": _cell(row, mapping.get("onekey")),
+                "wahlart": normalize_wahlart(_cell(row, mapping.get("wahlart"))),
             }
         )
     recognized = ", ".join(mapping[field] for field in mapping)
@@ -206,6 +209,7 @@ def export_frame(id_columns: list[str], rows: list[dict]) -> pd.DataFrame:
                 "Hauptfach": row["hauptfach"],
                 "ÖK-Nummer": row["oek"],
                 "One-Key-Nummer": row["onekey"],
+                "Wahlart": row.get("wahlart", ""),
                 "Status": STATUS_LABELS.get(row["match_status"], row["match_status"]),
                 "Score": row["match_score"],
                 "Methode": row["match_method"],
@@ -219,6 +223,7 @@ def export_frame(id_columns: list[str], rows: list[dict]) -> pd.DataFrame:
                 "Match Hauptfach": row["match_hauptfach"],
                 "Match ÖK-Nummer": row["match_oek"],
                 "Match One-Key-Nummer": row["match_onekey"],
+                "Match Wahlart": row.get("match_wahlart", ""),
             }
         )
         records.append(record)

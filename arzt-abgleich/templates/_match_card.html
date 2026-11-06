@@ -35,6 +35,16 @@
             <p class="field-fach">{{ row.hauptfach }}</p>
             <p class="field-fach">{{ row.candidate.hauptfach if row.candidate else "" }}</p>
         </div>
+        <div class="pair-row">
+            <label class="check">
+                <input type="checkbox" disabled {% if row.wahlart == 'ja' %}checked{% endif %}>
+                Wahlart{% if row.wahlart == 'ja' %} ja{% elif row.wahlart == 'nein' %} nein{% endif %}
+            </label>
+            <label class="check">
+                <input type="checkbox" disabled {% if row.candidate and row.candidate.wahlart == 'ja' %}checked{% endif %}>
+                Wahlart{% if row.candidate and row.candidate.wahlart == 'ja' %} ja{% elif row.candidate and row.candidate.wahlart == 'nein' %} nein{% endif %}
+            </label>
+        </div>
         {% if row.oek or (row.candidate and row.candidate.oek) %}
         <div class="pair-row">
             <p>{% if row.oek %}ÖK {{ row.oek }}{% endif %}</p>

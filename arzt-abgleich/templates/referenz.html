@@ -4,7 +4,7 @@
 <h1>Referenzliste</h1>
 <section class="panel">
     <h2>{% if version %}Version ersetzen{% else %}Erste Version hochladen{% endif %}</h2>
-    <p>Eine Zeile pro Person, eine Evo-ID. Spalten: Evo-ID, Titel, Vorname, Nachname, Ort, Postleitzahl, Hauptfach, ÖK-Nummer, One-Key-Nummer.</p>
+    <p>Eine Zeile pro Person, eine Evo-ID. Spalten: Evo-ID, Titel, Vorname, Nachname, Ort, Postleitzahl, Hauptfach, ÖK-Nummer, One-Key-Nummer, Wahlart (ja oder nein: privat behandelt).</p>
     <form method="post" enctype="multipart/form-data" class="stack">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label>Excel oder CSV

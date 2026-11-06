@@ -7,6 +7,9 @@
     {% if version %}
         <p>Aktuelle Version vom <strong>{{ version.uploaded_at|vienna }}</strong> Uhr (Wien),
             {{ version.row_count }} Ärzte, Datei {{ version.filename }}.</p>
+        {% if wahlart %}
+        <p>Wahlart, privat behandelt: {{ wahlart.ja }} ja, {{ wahlart.nein }} nein.</p>
+        {% endif %}
         <pre class="log">{{ version.log_text }}</pre>
     {% else %}
         <p>Noch keine Referenzliste hochgeladen.</p>

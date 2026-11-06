@@ -1,8 +1,8 @@
-Evo-ID,Titel,Vorname,Nachname,Ort,Postleitzahl,Hauptfach,ÖK-Nummer,One-Key-Nummer
-E1001,Dr.,Anna,Huber,Wien,1010,Innere Medizin,123456,W1001
-E1002,Dr.,Hans-Peter,Müller-Schmidt,Graz,8010,Allgemeinmedizin,234567,W1002
-E1003,Univ.-Prof.,Maria,Berger,Linz,4020,Kinderheilkunde,345678,W1003
-E1004,Dr.,Thomas,Gruber,Salzburg,5020,Orthopädie,456789,W1004
-E1005,Dr.,Sabine,Hofer,Innsbruck,6020,Dermatologie,567890,W1005
-E1006,DDr.,Klaus,Wagner,Klagenfurt,9020,Neurologie,678901,W1006
-E1002,Dr.,Doppelt,Eintrag,Wien,1010,Allgemeinmedizin,999999,W9999
+Evo-ID,Titel,Vorname,Nachname,Ort,Postleitzahl,Hauptfach,ÖK-Nummer,One-Key-Nummer,Wahlart
+E1001,Dr.,Anna,Huber,Wien,1010,Innere Medizin,123456,W1001,ja
+E1002,Dr.,Hans-Peter,Müller-Schmidt,Graz,8010,Allgemeinmedizin,234567,W1002,nein
+E1003,Univ.-Prof.,Maria,Berger,Linz,4020,Kinderheilkunde,345678,W1003,ja
+E1004,Dr.,Thomas,Gruber,Salzburg,5020,Orthopädie,456789,W1004,ja
+E1005,Dr.,Sabine,Hofer,Innsbruck,6020,Dermatologie,567890,W1005,nein
+E1006,DDr.,Klaus,Wagner,Klagenfurt,9020,Neurologie,678901,W1006,nein
+E1002,Dr.,Doppelt,Eintrag,Wien,1010,Allgemeinmedizin,999999,W9999,ja

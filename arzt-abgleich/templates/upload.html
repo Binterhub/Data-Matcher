@@ -9,7 +9,7 @@
         <p class="flash flash-error">Noch keine Referenzliste. Die externe Liste kann trotzdem hochgeladen werden. Der Abgleich startet, sobald eine Referenzliste vorhanden ist.</p>
         <p><a class="button" href="{{ url_for('referenz') }}">Referenzliste hochladen</a></p>
     {% endif %}
-    <p>Spalten: Titel, Vorname, Nachname, PLZ, Ort, plus Kunden-IDs. ÖK-Nummer, One-Key-Nummer und Hauptfach werden verwendet, wenn sie vorhanden sind.</p>
+    <p>Spalten: Titel, Vorname, Nachname, PLZ, Ort, plus Kunden-IDs. ÖK-Nummer, One-Key-Nummer, Hauptfach und Wahlart (ja/nein, privat behandelt) werden verwendet, wenn sie vorhanden sind.</p>
     <form method="post" enctype="multipart/form-data" class="stack">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <label>Excel oder CSV
