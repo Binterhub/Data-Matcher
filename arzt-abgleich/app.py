@@ -1026,6 +1026,7 @@ def _export_frame(upload_id: int):
                 "oek": view["oek"],
                 "onekey": view["onekey"],
                 "wahlart": view["wahlart"],
+                "source_extra": json.loads(row["source_extra"] or "{}"),
                 "match_status": view["status"],
                 "match_score": view["score"],
                 "match_method": view["method"],

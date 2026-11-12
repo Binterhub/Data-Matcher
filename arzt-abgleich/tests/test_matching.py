@@ -242,6 +242,39 @@ class AppTests(unittest.TestCase):
         self.assertIn("Manuell", csv_export)
         self.assertIn("E1006", csv_export)
 
+    def test_export_keeps_columns_that_are_not_used_for_matching(self):
+        self._login()
+        payload = (
+            "Kunden-ID,Vorname,Nachname,PLZ,Ort,Telefon,Website,E-Mail,Notiz\n"
+            "K9,Ada,Lovelace,1010,Wien,0043111,https://ada.example,ada@example.com,Hinweis\n"
+        )
+        self.client.post(
+            "/upload",
+            data={
+                "csrf_token": self._csrf(),
+                "file": (io.BytesIO(payload.encode("utf-8")), "liste.csv"),
+            },
+            follow_redirects=True,
+        )
+        export = self.client.get("/uploads/1/export.xlsx")
+        self.assertEqual(export.status_code, 200)
+        workbook_bytes = io.BytesIO(export.data)
+        header = next(load_workbook(workbook_bytes).active.iter_rows(values_only=True))
+        self.assertIn("Telefon", header)
+        self.assertIn("Website", header)
+        self.assertIn("E-Mail", header)
+        self.assertIn("Notiz", header)
+        self.assertIn("Vorname", header)
+        workbook_bytes.seek(0)
+        row = list(load_workbook(workbook_bytes).active.iter_rows(values_only=True))[1]
+        by_name = dict(zip(header, row))
+        self.assertEqual(by_name["Telefon"], "0043111")
+        self.assertEqual(by_name["Website"], "https://ada.example")
+        self.assertEqual(by_name["E-Mail"], "ada@example.com")
+        self.assertEqual(by_name["Notiz"], "Hinweis")
+        self.assertEqual(by_name["Vorname"], "Ada")
+        self.assertEqual(by_name["Nachname"], "Lovelace")
+
     def _upload_samples(self):
         self._login()
         self.client.post(

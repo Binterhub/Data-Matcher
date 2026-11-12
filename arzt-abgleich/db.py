@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS external_rows (
     upload_id INTEGER NOT NULL REFERENCES external_uploads(id),
     row_number INTEGER NOT NULL,
     customer_ids TEXT NOT NULL,
+    source_extra TEXT NOT NULL DEFAULT '{}',
     titel TEXT NOT NULL,
     vorname TEXT NOT NULL,
     nachname TEXT NOT NULL,
@@ -110,6 +111,7 @@ def init_db(db_path: Path) -> None:
         _ensure_column(connection, "reference_doctors", "wahlart")
         _ensure_column(connection, "external_rows", "wahlart")
         _ensure_column(connection, "external_rows", "match_wahlart")
+        _ensure_column(connection, "external_rows", "source_extra")
         connection.commit()
 
 
@@ -207,16 +209,17 @@ def save_upload(
     upload_id = int(cursor.lastrowid)
     connection.executemany(
         """INSERT INTO external_rows (
-               upload_id, row_number, customer_ids, titel, vorname, nachname, plz, ort,
+               upload_id, row_number, customer_ids, source_extra, titel, vorname, nachname, plz, ort,
                hauptfach, oek, onekey, wahlart, match_evo_id, match_score, match_status, match_method,
                match_note, match_titel, match_vorname, match_nachname, match_ort, match_plz,
                match_hauptfach, match_oek, match_onekey, match_wahlart, locked
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         [
             (
                 upload_id,
                 row["row_number"],
                 json.dumps(row["customer_ids"], ensure_ascii=False),
+                json.dumps(row.get("source_extra") or {}, ensure_ascii=False),
                 row["titel"],
                 row["vorname"],
                 row["nachname"],

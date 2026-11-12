@@ -23,6 +23,7 @@ HEADER_ALIASES = {
 }
 
 ID_TOKENS = {"id", "nummer", "kunden", "customer", "nr", "kundennr"}
+_STORED_FIELDS = {"titel", "vorname", "nachname", "plz", "ort", "hauptfach", "oek", "onekey", "wahlart"}
 
 STATUS_LABELS = {
     "auto": "Automatisch",
@@ -160,6 +161,9 @@ def parse_external(frame: pd.DataFrame) -> tuple[list[dict], list[str], str]:
     missing = [label for field, label in (("vorname", "Vorname"), ("nachname", "Nachname")) if field not in mapping]
     if missing:
         raise ValueError("Pflichtspalten fehlen: " + ", ".join(missing) + ".")
+    kept_headers = {mapping[field] for field in _STORED_FIELDS if field in mapping}
+    kept_headers.update(customer_columns)
+    extra_columns = [column for column in frame.columns if column and column not in kept_headers]
 
     rows: list[dict] = []
     for index, row in frame.iterrows():
@@ -172,6 +176,7 @@ def parse_external(frame: pd.DataFrame) -> tuple[list[dict], list[str], str]:
             {
                 "row_number": int(index) + 2,
                 "customer_ids": customer_ids,
+                "source_extra": {column: _cell(row, column) for column in extra_columns},
                 "titel": _cell(row, mapping.get("titel")),
                 "vorname": vorname,
                 "nachname": nachname,
@@ -185,11 +190,13 @@ def parse_external(frame: pd.DataFrame) -> tuple[list[dict], list[str], str]:
         )
     recognized = ", ".join(mapping[field] for field in mapping)
     id_text = ", ".join(customer_columns) if customer_columns else "keine"
+    extra_text = ", ".join(extra_columns) if extra_columns else "keine"
     log = "\n".join(
         [
             f"{len(rows)} Zeilen gelesen.",
             f"Spalten erkannt: {recognized}.",
             f"Kunden-IDs: {id_text}.",
+            f"Weitere Spalten: {extra_text}.",
         ]
     )
     return rows, customer_columns, log
@@ -226,5 +233,8 @@ def export_frame(id_columns: list[str], rows: list[dict]) -> pd.DataFrame:
                 "Match Wahlart": row.get("match_wahlart", ""),
             }
         )
+        for column, value in (row.get("source_extra") or {}).items():
+            name = column if column not in record else f"{column} (Quelle)"
+            record[name] = value
         records.append(record)
     return pd.DataFrame.from_records(records)
