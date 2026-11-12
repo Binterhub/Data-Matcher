@@ -11,6 +11,7 @@ import pandas as pd
 from openpyxl import load_workbook
 
 from app import create_app, gender_from_name, gender_from_title, genders_differ
+import learning
 from matching import (
     Doctor,
     ExternalPerson,
@@ -314,6 +315,113 @@ class AppTests(unittest.TestCase):
         self.assertEqual(skipped, 1)
         self.assertEqual(len(parsed), 6)
         self.assertIn("doppelte Evo-ID", log)
+
+
+class LearningHintTests(unittest.TestCase):
+    def test_second_given_name_does_not_lower_a_name_and_fach_match(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Philipp Max", "Trost", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Philipp", "Trost", "4020", "Linz", "Innere Medizin"),
+            counts={"philipp trost": 1},
+        )
+        self.assertEqual(hint["kind"], "right")
+        self.assertIn("selten", hint["text"])
+        self.assertIn("zweiter Vorname", hint["text"])
+        self.assertIn("zählt nur wenig", hint["text"])
+        self.assertNotIn("Geringe Sicherheit", hint["text"])
+
+    def test_only_the_first_given_name_counts_as_a_mismatch(self):
+        alignment = learning.name_alignment("Philipp Max", "Trost", "Max", "Trost")
+        self.assertFalse(alignment["close"])
+        hint = learning.hint_from_parts(
+            ("Herr", "Philipp Max", "Trost", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Max", "Trost", "1010", "Wien", "Innere Medizin"),
+            counts={"max trost": 1, "philipp trost": 1},
+        )
+        self.assertEqual(hint["kind"], "down")
+        self.assertIn("erster Vorname", hint["text"])
+
+    def test_gender_mismatch_overrides_name_fach_and_rarity(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Philipp", "Trost", "1010", "Wien", "Innere Medizin"),
+            ("Frau", "Philipp", "Trost", "1010", "Wien", "Innere Medizin"),
+            counts={"philipp trost": 1},
+        )
+        self.assertEqual(hint["kind"], "low")
+        self.assertIn("Geschlecht", hint["text"])
+        self.assertNotIn("Hohe Sicherheit", hint["text"])
+
+    def test_common_austrian_names_lower_a_good_name_and_fach_match(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Peter", "Huber", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Peter", "Huber", "1010", "Wien", "Innere Medizin"),
+            counts={"peter huber": 1},
+        )
+        self.assertEqual(hint["kind"], "caution")
+        self.assertIn("häufig", hint["text"])
+
+    def test_a_common_second_given_name_does_not_lower_confidence(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Xaver Peter", "Zingl", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Xaver", "Zingl", "1010", "Wien", "Innere Medizin"),
+            counts={"xaver zingl": 1},
+        )
+        self.assertEqual(hint["kind"], "right")
+        self.assertNotIn("häufig", hint["text"])
+
+    def test_fach_mismatch_outranks_a_matching_name_place_and_rarity(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Philipp", "Trost", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Philipp", "Trost", "1010", "Wien", "Chirurgie"),
+            counts={"philipp trost": 1},
+        )
+        self.assertEqual(hint["kind"], "down")
+        self.assertIn("Fachgebiet", hint["text"])
+        self.assertIn("seltener Name", hint["text"])
+        self.assertIn("zählt nur wenig", hint["text"])
+
+    def test_place_disagreement_does_not_downgrade_name_and_fach(self):
+        hint = learning.hint_from_parts(
+            ("Herr", "Philipp", "Trost", "1010", "Wien", "Innere Medizin"),
+            ("Herr", "Philipp", "Trost", "5020", "Salzburg", "Innere Medizin"),
+            counts={"philipp trost": 4},
+        )
+        self.assertEqual(hint["kind"], "right")
+        self.assertIn("PLZ weicht ab", hint["text"])
+        self.assertIn("Ort weicht ab", hint["text"])
+        self.assertIn("zählt nur wenig", hint["text"])
+
+    def test_hints_do_not_change_score_bands(self):
+        self.assertEqual(classify_score(96), "very_likely")
+        self.assertEqual(classify_score(88), "likely")
+        self.assertEqual(classify_score(80), "uncertain")
+        self.assertEqual(classify_score(70), "likely_wrong")
+        self.assertEqual(classify_score(20), "unmatched")
+
+    def test_learned_clause_follows_the_rule_and_stays_quiet_when_thin(self):
+        features = learning.features_for(
+            left_titel="Herr",
+            left_vorname="Philipp",
+            left_nachname="Trost",
+            left_plz="1010",
+            left_ort="Wien",
+            left_fach="Innere Medizin",
+            right_titel="Herr",
+            right_vorname="Philipp",
+            right_nachname="Trost",
+            right_plz="1010",
+            right_ort="Wien",
+            right_fach="Innere Medizin",
+            counts={"philipp trost": 1},
+        )
+        quiet = learning.hint_from_features(features, {"buckets": {"name_and_fach": {"n": 3, "accepts": 3}}})
+        self.assertNotIn("Bisher", quiet["text"])
+        loud = learning.hint_from_features(
+            features,
+            {"buckets": {"name_and_fach": {"n": 10, "accepts": 9}}},
+        )
+        self.assertIn("9 von 10", loud["text"])
+        self.assertEqual(loud["kind"], "right")
 
 
 if __name__ == "__main__":

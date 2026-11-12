@@ -81,6 +81,14 @@ CREATE TABLE IF NOT EXISTS external_rows (
     match_wahlart TEXT NOT NULL DEFAULT '',
     locked INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS decision_examples (
+    row_id INTEGER PRIMARY KEY,
+    upload_id INTEGER NOT NULL,
+    decision TEXT NOT NULL,
+    features TEXT NOT NULL,
+    decided_at TEXT NOT NULL
+);
 """
 
 
@@ -305,6 +313,45 @@ def wahlart_summary(connection: sqlite3.Connection, version_id: int) -> dict[str
         if row["wahlart"] in counts:
             counts[row["wahlart"]] = row["n"]
     return counts
+
+
+def save_decision(
+    connection: sqlite3.Connection,
+    row_id: int,
+    upload_id: int,
+    decision: str,
+    features: dict,
+) -> None:
+    connection.execute(
+        """INSERT INTO decision_examples (row_id, upload_id, decision, features, decided_at)
+           VALUES (?, ?, ?, ?, ?)
+           ON CONFLICT(row_id) DO UPDATE SET
+               upload_id = excluded.upload_id,
+               decision = excluded.decision,
+               features = excluded.features,
+               decided_at = excluded.decided_at""",
+        (row_id, upload_id, decision, json.dumps(features, ensure_ascii=False), utcnow()),
+    )
+    connection.commit()
+
+
+def delete_decision(connection: sqlite3.Connection, row_id: int) -> None:
+    connection.execute("DELETE FROM decision_examples WHERE row_id = ?", (row_id,))
+    connection.commit()
+
+
+def list_decisions(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    return connection.execute(
+        "SELECT row_id, upload_id, decision, features, decided_at FROM decision_examples"
+    ).fetchall()
+
+
+def locked_rows_without_decision(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    return connection.execute(
+        """SELECT r.* FROM external_rows r
+           LEFT JOIN decision_examples d ON d.row_id = r.id
+           WHERE r.locked = 1 AND d.row_id IS NULL"""
+    ).fetchall()
 
 
 def find_doctor(connection: sqlite3.Connection, version_id: int, evo_id: str) -> sqlite3.Row | None:
