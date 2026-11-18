@@ -1,4 +1,5 @@
 import io
+import os
 import re
 import sys
 import tempfile
@@ -241,6 +242,15 @@ class AppTests(unittest.TestCase):
         csv_export = self.client.get("/uploads/1/export.csv").data.decode("utf-8-sig")
         self.assertIn("Manuell", csv_export)
         self.assertIn("E1006", csv_export)
+
+    def test_railway_volume_path_stores_the_database(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            os.environ["RAILWAY_VOLUME_MOUNT_PATH"] = tmp
+            try:
+                create_app()
+                self.assertTrue((Path(tmp) / "arzt.db").is_file())
+            finally:
+                os.environ.pop("RAILWAY_VOLUME_MOUNT_PATH", None)
 
     def test_export_keeps_columns_that_are_not_used_for_matching(self):
         self._login()

@@ -68,10 +68,16 @@ GROUP_COPY = {
 }
 
 
+def _default_instance_path() -> str:
+    """Use Railway's volume when one is attached. Otherwise keep the local instance folder."""
+    mount = os.environ.get("RAILWAY_VOLUME_MOUNT_PATH", "").strip()
+    return mount or str(BASE_DIR / "instance")
+
+
 def create_app(instance_path: str | None = None) -> Flask:
     app = Flask(
         __name__,
-        instance_path=instance_path or str(BASE_DIR / "instance"),
+        instance_path=instance_path or _default_instance_path(),
         template_folder=str(BASE_DIR / "templates"),
         static_folder=str(BASE_DIR / "static"),
     )
@@ -84,7 +90,7 @@ def create_app(instance_path: str | None = None) -> Flask:
         secret_path.write_text(app.secret_key, encoding="utf-8")
     app.config.update(
         SESSION_COOKIE_HTTPONLY=True,
-        SESSION_COOKIE_SECURE=False,
+        SESSION_COOKIE_SECURE=bool(os.environ.get("RAILWAY_ENVIRONMENT")),
         SESSION_COOKIE_SAMESITE="Lax",
         MAX_CONTENT_LENGTH=16 * 1024 * 1024,
         DB_PATH=str(Path(app.instance_path) / "arzt.db"),
@@ -95,6 +101,11 @@ def create_app(instance_path: str | None = None) -> Flask:
         _ensure_local_user(connection)
     finally:
         connection.close()
+
+    if os.environ.get("RAILWAY_ENVIRONMENT"):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     @app.before_request
     def prepare_request():
